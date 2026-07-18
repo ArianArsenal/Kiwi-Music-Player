@@ -17,4 +17,7 @@ interface SongDao {
 
     @Delete
     suspend fun deleteSong(song: SongEntity)
+
+    @Query("SELECT COUNT(*) FROM downloaded_songs")
+    fun getDownloadedSongCount(): Flow<Int>
 }

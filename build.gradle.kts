@@ -1,23 +1,8 @@
-package com.example.kiwi.data.local
-
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
-
-@Dao
-interface SongDao {
-    @Query("SELECT * FROM downloaded_songs")
-    fun getAllDownloadedSongs(): Flow<List<SongEntity>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertSong(song: SongEntity)
-
-    @Delete
-    suspend fun deleteSong(song: SongEntity)
-
-    @Query("SELECT COUNT(*) FROM downloaded_songs")
-    fun getDownloadedSongCount(): Flow<Int>
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    id("org.jetbrains.kotlin.android") version "2.0.21" apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.hilt) apply false
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21" apply false
 }

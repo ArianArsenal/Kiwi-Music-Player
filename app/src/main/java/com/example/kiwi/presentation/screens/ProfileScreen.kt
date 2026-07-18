@@ -105,7 +105,6 @@ fun ProfileScreen(
     }
 }
 
-
 @Composable
 fun ProfileStat(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
