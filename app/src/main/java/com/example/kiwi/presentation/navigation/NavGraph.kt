@@ -37,7 +37,6 @@ fun KiwiNavGraph(
         composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel) }
         composable(Screen.Search.route) { SearchScreen(playerViewModel = playerViewModel) }
         composable(Screen.Downloads.route) { DownloadsScreen(playerViewModel = playerViewModel) }
-        composable(Screen.Profile.route) { ProfileScreen() }
         composable(Screen.Playlists.route) {
             PlaylistsScreen(
                 onPlaylistClick = { playlistId ->
@@ -45,6 +44,7 @@ fun KiwiNavGraph(
                 }
             )
         }
+        composable(Screen.Profile.route) { ProfileScreen() }
         composable(
             route = Screen.PlaylistDetail.route,
             arguments = listOf(navArgument("playlistId") { type = NavType.StringType })

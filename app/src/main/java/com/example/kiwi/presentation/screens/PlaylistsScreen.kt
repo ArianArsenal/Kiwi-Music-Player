@@ -26,7 +26,8 @@ import com.example.kiwi.presentation.viewmodel.PlaylistsViewModel
 
 @Composable
 fun PlaylistsScreen(
-    viewModel: PlaylistsViewModel = hiltViewModel()
+    viewModel: PlaylistsViewModel = hiltViewModel(),
+    onPlaylistClick: (String) -> Unit // The NavGraph listens to this!
 ) {
     val playlists by viewModel.playlists.collectAsState()
 
@@ -50,28 +51,30 @@ fun PlaylistsScreen(
             )
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2), // 2 columns wide
+                columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(playlists) { playlist ->
-                    PlaylistItem(playlist = playlist, onClick = {
-                        // TODO: Open Playlist details and fetch mapped songs!
-                    })
+                    PlaylistItem(
+                        playlist = playlist,
+                        onClick = { onPlaylistClick(playlist.id) } // Triggers the navigation
+                    )
                 }
             }
         }
     }
 }
+
 @Composable
 fun PlaylistItem(playlist: Playlist, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .clickable { onClick() } // Makes the entire block tappable
     ) {
         AsyncImage(
             model = playlist.coverImageUrl,
@@ -79,7 +82,7 @@ fun PlaylistItem(playlist: Playlist, onClick: () -> Unit) {
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f) // Keep it a square
+                .aspectRatio(1f)
                 .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
