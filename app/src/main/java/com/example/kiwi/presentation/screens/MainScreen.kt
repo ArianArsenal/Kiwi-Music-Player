@@ -25,6 +25,7 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
 
+    // State to track if the full-screen player is open or closed
     var isPlayerExpanded by rememberSaveable { mutableStateOf(false) }
 
     KiwiTheme {
@@ -53,10 +54,11 @@ fun MainScreen(
                 )
             }
 
+            // The Full Screen Player Layer
             AnimatedVisibility(
                 visible = isPlayerExpanded,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it })
+                enter = slideInVertically(initialOffsetY = { it }), // Slides up from the bottom
+                exit = slideOutVertically(targetOffsetY = { it })  // Slides down to close
             ) {
                 FullScreenPlayer(
                     viewModel = playerViewModel,

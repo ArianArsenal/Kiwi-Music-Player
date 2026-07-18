@@ -8,4 +8,6 @@ interface SongRepository {
 
     // NEW: Function to search for specific tracks
     fun searchSongs(query: String): Flow<List<Song>>
+    fun getDownloadedSongs(): Flow<List<Song>>
+    suspend fun saveSongLocally(song: Song)
 }

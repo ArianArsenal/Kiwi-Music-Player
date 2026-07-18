@@ -8,11 +8,13 @@ lifecycleRuntimeKtx = "2.8.2"
 activityCompose = "1.9.0"
 kotlin = "2.0.21"
 composeBom = "2024.09.00"
-ksp = "2.0.21-1.0.25"
+#ksp = "2.0.21-1.0.25"
 hilt = "2.51.1"
 coil = "2.6.0"
 supabase = "2.5.0"
 ktor = "2.3.11"
+ksp = "2.0.21-1.0.27"
+room = "2.6.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -34,6 +36,9 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt", version.ref = "supabase" }
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.6.3" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

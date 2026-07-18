@@ -1,5 +1,6 @@
 package com.example.kiwi.di
 
+import com.example.kiwi.data.repository.SongRepositoryImpl
 import com.example.kiwi.domain.repository.SongRepository
 import dagger.Binds
 import dagger.Module
@@ -10,6 +11,8 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 abstract class DataModule {
 
+    // This tells Hilt: "Whenever something asks for a SongRepository,
+    // give them the SongRepositoryImpl."
     @Binds
     abstract fun bindSongRepository(
         songRepositoryImpl: SongRepositoryImpl

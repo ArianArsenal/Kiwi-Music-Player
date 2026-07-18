@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class Song(
     val id: String,
     val title: String,
-    @SerialName("artist_name")
+    @SerialName("artist_name") // Maps the Kotlin camelCase to SQL snake_case
     val artistName: String,
     @SerialName("cover_image_url")
     val coverImageUrl: String,

@@ -11,6 +11,7 @@ import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.example.kiwi.domain.model.Song
+import com.example.kiwi.domain.repository.SongRepository
 import com.example.kiwi.service.KiwiPlaybackService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -23,12 +24,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    @ApplicationContext context: Context
+    @ApplicationContext context: Context,
+    private val repository: SongRepository
 ) : ViewModel() {
 
     private var mediaController: MediaController? = null
 
-
+    // NEW: We keep track of the current playlist in memory
     private var currentPlaylist: List<Song> = emptyList()
 
     private val _isPlaying = MutableStateFlow(false)
@@ -59,7 +61,7 @@ class PlayerViewModel @Inject constructor(
                             _duration.value = mediaController?.duration?.coerceAtLeast(0L) ?: 0L
                         }
                     }
-
+                    // NEW: Automatically updates the UI when a song naturally finishes or gets skipped
                     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                         mediaItem?.let { item ->
                             val matchingSong = currentPlaylist.find { it.id == item.mediaId }
@@ -84,7 +86,7 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-
+    // NEW: Accepts the whole list and the index of the clicked song
     fun playSongList(songs: List<Song>, startIndex: Int) {
         currentPlaylist = songs
         _currentSong.value = songs[startIndex]
@@ -113,6 +115,7 @@ class PlayerViewModel @Inject constructor(
         _currentPosition.value = position
     }
 
+    // NEW: Skip commands for the UI buttons
     fun skipToNext() {
         mediaController?.seekToNextMediaItem()
     }
@@ -124,5 +127,13 @@ class PlayerViewModel @Inject constructor(
     override fun onCleared() {
         mediaController?.release()
         super.onCleared()
+    }
+
+    fun downloadCurrentSong() {
+        _currentSong.value?.let { song ->
+            viewModelScope.launch {
+                repository.saveSongLocally(song)
+            }
+        }
     }
 }
