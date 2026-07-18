@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.kiwi.presentation.screens.*
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
@@ -14,6 +16,10 @@ sealed class Screen(val route: String) {
     object Downloads : Screen("downloads")
     object Playlists : Screen("playlists")
     object Profile : Screen("profile")
+
+    object PlaylistDetail : Screen("playlist_detail/{playlistId}") {
+        fun createRoute(playlistId: String) = "playlist_detail/$playlistId"
+    }
 }
 
 @Composable
@@ -31,7 +37,23 @@ fun KiwiNavGraph(
         composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel) }
         composable(Screen.Search.route) { SearchScreen(playerViewModel = playerViewModel) }
         composable(Screen.Downloads.route) { DownloadsScreen(playerViewModel = playerViewModel) }
-        composable(Screen.Playlists.route) { PlaylistsScreen() }
         composable(Screen.Profile.route) { ProfileScreen() }
+        composable(Screen.Playlists.route) {
+            PlaylistsScreen(
+                onPlaylistClick = { playlistId ->
+                    navController.navigate(Screen.PlaylistDetail.createRoute(playlistId))
+                }
+            )
+        }
+        composable(
+            route = Screen.PlaylistDetail.route,
+            arguments = listOf(navArgument("playlistId") { type = NavType.StringType })
+        ) {
+            PlaylistDetailScreen(
+                playerViewModel = playerViewModel,
+                onBackClick = { navController.navigateUp() }
+            )
+        }
+
     }
 }
