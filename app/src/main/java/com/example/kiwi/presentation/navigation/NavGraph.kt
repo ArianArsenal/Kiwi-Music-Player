@@ -6,8 +6,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.kiwi.presentation.screens.*
+import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 
-// Define our strict routes
 sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Search : Screen("search")
@@ -19,6 +19,7 @@ sealed class Screen(val route: String) {
 @Composable
 fun KiwiNavGraph(
     navController: NavHostController,
+    playerViewModel: PlayerViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -26,7 +27,7 @@ fun KiwiNavGraph(
         startDestination = Screen.Home.route,
         modifier = modifier
     ) {
-        composable(Screen.Home.route) { HomeScreen() }
+        composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel) }
         composable(Screen.Search.route) { SearchScreen() }
         composable(Screen.Downloads.route) { DownloadsScreen() }
         composable(Screen.Playlists.route) { PlaylistsScreen() }

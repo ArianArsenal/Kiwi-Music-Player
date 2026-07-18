@@ -1,6 +1,7 @@
 package com.example.kiwi.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,19 +18,20 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.presentation.viewmodel.HomeViewModel
+import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel
 ) {
-    // This observes the data from the ViewModel
     val songs by viewModel.featuredSongs.collectAsState()
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp) // Padding for the bottom nav bar
+        contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
     ) {
         item {
             Text(
@@ -41,19 +43,23 @@ fun HomeScreen(
         }
 
         items(songs) { song ->
-            SongItemRow(song = song)
+            SongItemRow(
+                song = song,
+                onClick = { playerViewModel.playSong(song) }
+            )
         }
     }
 }
 
 @Composable
-fun SongItemRow(song: Song) {
+fun SongItemRow(song: Song, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surface)
+            .clickable { onClick() }
             .padding(16.dp)
     ) {
         Box(
