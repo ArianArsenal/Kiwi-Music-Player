@@ -15,4 +15,6 @@ interface SongRepository {
     fun getPlaylists(): Flow<List<Playlist>>
 
     fun getPlaylistSongs(playlistId: String): Flow<List<Song>>
+
+    fun getDownloadedSongCount(): Flow<Int>
 }

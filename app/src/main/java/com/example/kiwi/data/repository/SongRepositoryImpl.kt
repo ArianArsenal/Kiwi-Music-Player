@@ -105,4 +105,9 @@ class SongRepositoryImpl @Inject constructor(
             emit(emptyList())
         }
     }
+
+    // NEW: Fetches the total number of downloaded rows
+    override fun getDownloadedSongCount(): Flow<Int> {
+        return dao.getDownloadedSongCount()
+    }
 }
