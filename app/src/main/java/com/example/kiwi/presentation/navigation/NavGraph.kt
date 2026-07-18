@@ -19,7 +19,7 @@ sealed class Screen(val route: String) {
 @Composable
 fun KiwiNavGraph(
     navController: NavHostController,
-    playerViewModel: PlayerViewModel,
+    playerViewModel: PlayerViewModel, 
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -28,7 +28,7 @@ fun KiwiNavGraph(
         modifier = modifier
     ) {
         composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel) }
-        composable(Screen.Search.route) { SearchScreen() }
+        composable(Screen.Search.route) { SearchScreen(playerViewModel = playerViewModel) }
         composable(Screen.Downloads.route) { DownloadsScreen() }
         composable(Screen.Playlists.route) { PlaylistsScreen() }
         composable(Screen.Profile.route) { ProfileScreen() }
