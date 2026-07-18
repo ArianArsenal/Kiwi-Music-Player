@@ -19,7 +19,7 @@ sealed class Screen(val route: String) {
 @Composable
 fun KiwiNavGraph(
     navController: NavHostController,
-    playerViewModel: PlayerViewModel, 
+    playerViewModel: PlayerViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
