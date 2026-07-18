@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 android {
     namespace = "com.example.kiwi"
@@ -43,6 +44,7 @@ android {
 }
 
 dependencies {
+    // Leave your existing standard UI/Testing dependencies here
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -81,4 +83,9 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.4.0")
 
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.coil.compose)
+
+    implementation(libs.supabase.postgrest)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.kotlinx.serialization.json)
 }

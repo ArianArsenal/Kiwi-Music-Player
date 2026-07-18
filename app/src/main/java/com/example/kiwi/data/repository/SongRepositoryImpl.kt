@@ -1,50 +1,52 @@
 package com.example.kiwi.data.repository
 
+import android.util.Log
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.SongRepository
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class SongRepositoryImpl @Inject constructor() : SongRepository {
-
-    private val allSongs = listOf(
-        Song(
-            id = "1",
-            title = "Electronic Test Stream",
-            artistName = "SoundHelix",
-            coverImageUrl = "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=500&auto=format&fit=crop",
-            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-        ),
-        Song(
-            id = "2",
-            title = "Acoustic Test Stream",
-            artistName = "SoundHelix",
-            coverImageUrl = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=500&auto=format&fit=crop",
-            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
-        ),
-        Song(
-            id = "3",
-            title = "Cinematic Test Stream",
-            artistName = "SoundHelix",
-            coverImageUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=500&auto=format&fit=crop",
-            audioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
-        )
-    )
+class SongRepositoryImpl @Inject constructor(
+    private val supabase: SupabaseClient
+) : SongRepository {
 
     override fun getFeaturedSongs(): Flow<List<Song>> = flow {
-        emit(allSongs)
+        try {
+            // Force the network call onto the Background I/O thread
+            val songs = withContext(Dispatchers.IO) {
+                supabase.from("songs").select().decodeList<Song>()
+            }
+            emit(songs)
+        } catch (e: Exception) {
+            // This will print a bright red error in Logcat so we can see EXACTLY what failed
+            Log.e("SupabaseError", "Failed to fetch songs: ${e.message}", e)
+            emit(emptyList())
+        }
     }
 
     override fun searchSongs(query: String): Flow<List<Song>> = flow {
         if (query.isBlank()) {
             emit(emptyList())
-        } else {
-            val filteredList = allSongs.filter {
-                it.title.contains(query, ignoreCase = true) ||
-                        it.artistName.contains(query, ignoreCase = true)
+            return@flow
+        }
+
+        try {
+            val results = withContext(Dispatchers.IO) {
+                supabase.from("songs").select {
+                    filter {
+                        ilike("title", "%$query%")
+                    }
+                }.decodeList<Song>()
             }
-            emit(filteredList)
+            emit(results)
+        } catch (e: Exception) {
+            Log.e("SupabaseError", "Failed to search songs: ${e.message}", e)
+            emit(emptyList())
         }
     }
 }
