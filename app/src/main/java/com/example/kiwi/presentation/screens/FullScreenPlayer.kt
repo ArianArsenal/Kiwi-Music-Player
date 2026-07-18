@@ -5,11 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,6 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
+import java.util.Locale
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun FullScreenPlayer(
@@ -29,6 +28,9 @@ fun FullScreenPlayer(
 ) {
     val currentSong by viewModel.currentSong.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
+
+    val currentPosition by viewModel.currentPosition.collectAsState()
+    val duration by viewModel.duration.collectAsState()
 
     BackHandler { onClose() }
 
@@ -54,15 +56,19 @@ fun FullScreenPlayer(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Box(
+        AsyncImage(
+            model = currentSong!!.coverImageUrl,
+            contentDescription = "Album Art",
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f)
+                .aspectRatio(1f) // Keeps it a perfect square
                 .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         )
 
         Spacer(modifier = Modifier.height(48.dp))
+
 
         Text(
             text = currentSong!!.title,
@@ -82,23 +88,41 @@ fun FullScreenPlayer(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Slider(
-            value = 0f,
-            onValueChange = { },
-            modifier = Modifier.fillMaxWidth(),
-            colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Slider(
+                value = if (duration > 0) currentPosition.toFloat() else 0f,
+                valueRange = 0f..(if (duration > 0) duration.toFloat() else 100f),
+                onValueChange = { viewModel.seekTo(it.toLong()) },
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary
+                )
             )
-        )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = formatDuration(currentPosition),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = formatDuration(duration),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { /* TODO: Skip Previous */ }) {
+            IconButton(onClick = { viewModel.skipToPrevious() }) {
                 Icon(
                     imageVector = Icons.Default.SkipPrevious,
                     contentDescription = "Previous",
@@ -111,7 +135,7 @@ fun FullScreenPlayer(
                 onClick = { viewModel.togglePlayPause() },
                 containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(72.dp),
-                shape = RoundedCornerShape(50) // Perfect circle
+                shape = RoundedCornerShape(50)
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -121,7 +145,7 @@ fun FullScreenPlayer(
                 )
             }
 
-            IconButton(onClick = { /* TODO: Skip Next */ }) {
+            IconButton(onClick = { viewModel.skipToNext() }) {
                 Icon(
                     imageVector = Icons.Default.SkipNext,
                     contentDescription = "Next",
@@ -131,4 +155,11 @@ fun FullScreenPlayer(
             }
         }
     }
+}
+
+private fun formatDuration(durationMs: Long): String {
+    val totalSeconds = durationMs / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
 }

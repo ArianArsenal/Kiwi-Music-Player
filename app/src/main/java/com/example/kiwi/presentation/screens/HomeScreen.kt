@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,11 +20,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.presentation.viewmodel.HomeViewModel
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
-
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    playerViewModel: PlayerViewModel
+    playerViewModel: PlayerViewModel // Accept the player ViewModel
 ) {
     val songs by viewModel.featuredSongs.collectAsState()
 
@@ -42,10 +44,10 @@ fun HomeScreen(
             )
         }
 
-        items(songs) { song ->
+        itemsIndexed(songs) { index, song ->
             SongItemRow(
                 song = song,
-                onClick = { playerViewModel.playSong(song) }
+                onClick = { playerViewModel.playSongList(songs, index) } // Pass the whole list!
             )
         }
     }
@@ -59,14 +61,17 @@ fun SongItemRow(song: Song, onClick: () -> Unit) {
             .padding(vertical = 8.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .clickable { onClick() }
+            .clickable { onClick() } // Make the row clickable
             .padding(16.dp)
     ) {
-        Box(
+        AsyncImage(
+            model = song.coverImageUrl,
+            contentDescription = "Album Art",
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         )
 
         Spacer(modifier = Modifier.width(16.dp))
