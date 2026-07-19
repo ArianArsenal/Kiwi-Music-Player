@@ -16,7 +16,7 @@ import com.example.kiwi.presentation.components.KiwiBottomNavBar
 import com.example.kiwi.presentation.components.KiwiTopBar
 import com.example.kiwi.presentation.components.MiniPlayer
 import com.example.kiwi.presentation.navigation.KiwiNavGraph
-import com.example.kiwi.presentation.theme.KiwiTheme
+import com.example.kiwi.presentation.theme.KiwiMusicPlayerTheme
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 
 @Composable
@@ -24,20 +24,17 @@ fun MainScreen(
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
-
-    // State to track if the full-screen player is open or closed
     var isPlayerExpanded by rememberSaveable { mutableStateOf(false) }
 
-    KiwiTheme {
+    KiwiMusicPlayerTheme {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Your normal app content
             Scaffold(
                 topBar = { KiwiTopBar() },
                 bottomBar = {
                     Column {
                         MiniPlayer(
                             viewModel = playerViewModel,
-                            onExpand = { isPlayerExpanded = true } // Open player when clicked!
+                            onExpand = { isPlayerExpanded = true }
                         )
                         KiwiBottomNavBar(navController = navController)
                     }
@@ -54,11 +51,10 @@ fun MainScreen(
                 )
             }
 
-            // The Full Screen Player Layer
             AnimatedVisibility(
                 visible = isPlayerExpanded,
-                enter = slideInVertically(initialOffsetY = { it }), // Slides up from the bottom
-                exit = slideOutVertically(targetOffsetY = { it })  // Slides down to close
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it })
             ) {
                 FullScreenPlayer(
                     viewModel = playerViewModel,

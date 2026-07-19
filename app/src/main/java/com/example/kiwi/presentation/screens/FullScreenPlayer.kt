@@ -1,5 +1,6 @@
 package com.example.kiwi.presentation.screens
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,17 +14,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.example.kiwi.R
+import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 import java.util.Locale
-import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.material.icons.filled.Download
-
-import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
 
 @Composable
 fun FullScreenPlayer(
@@ -31,10 +31,9 @@ fun FullScreenPlayer(
     onClose: () -> Unit
 ) {
     val context = LocalContext.current
+    val dimens = LocalDimens.current
     val currentSong by viewModel.currentSong.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
-
-    // NEW: Observe the time
     val currentPosition by viewModel.currentPosition.collectAsState()
     val duration by viewModel.duration.collectAsState()
 
@@ -46,7 +45,7 @@ fun FullScreenPlayer(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp)
+            .padding(dimens.large)
     ) {
         IconButton(
             onClick = onClose,
@@ -54,26 +53,26 @@ fun FullScreenPlayer(
         ) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "Close Player",
-                modifier = Modifier.size(32.dp),
+                contentDescription = stringResource(id = R.string.content_desc_close_player),
+                modifier = Modifier.size(dimens.extraLarge),
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimens.extraLarge))
 
         AsyncImage(
             model = currentSong!!.coverImageUrl,
-            contentDescription = "Album Art",
+            contentDescription = stringResource(id = R.string.content_desc_album_art),
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f) // Keeps it a perfect square
-                .clip(RoundedCornerShape(16.dp))
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(dimens.medium))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(dimens.largeIcon))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -98,22 +97,24 @@ fun FullScreenPlayer(
                 )
             }
 
-            // The new Save button with feedback
             IconButton(onClick = {
                 viewModel.downloadCurrentSong()
-                Toast.makeText(context, "Saved to Downloads!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.toast_saved_to_downloads),
+                    Toast.LENGTH_SHORT
+                ).show()
             }) {
                 Icon(
                     imageVector = Icons.Default.Download,
-                    contentDescription = "Save to Downloads",
+                    contentDescription = stringResource(id = R.string.content_desc_save_download),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimens.extraLarge))
 
-        // NEW: Fully functional scrubber and timestamps
         Column(modifier = Modifier.fillMaxWidth()) {
             Slider(
                 value = if (duration > 0) currentPosition.toFloat() else 0f,
@@ -141,18 +142,18 @@ fun FullScreenPlayer(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.medium))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { viewModel.skipToPrevious() }) { // UPDATED
+            IconButton(onClick = { viewModel.skipToPrevious() }) {
                 Icon(
                     imageVector = Icons.Default.SkipPrevious,
-                    contentDescription = "Previous",
-                    modifier = Modifier.size(48.dp),
+                    contentDescription = stringResource(id = R.string.content_desc_prev),
+                    modifier = Modifier.size(dimens.largeIcon),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -160,22 +161,22 @@ fun FullScreenPlayer(
             FloatingActionButton(
                 onClick = { viewModel.togglePlayPause() },
                 containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(72.dp),
+                modifier = Modifier.size(dimens.fabSize),
                 shape = RoundedCornerShape(50)
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = "Play/Pause",
-                    modifier = Modifier.size(36.dp),
+                    contentDescription = stringResource(id = R.string.content_desc_play_pause),
+                    modifier = Modifier.size(dimens.extraLarge),
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
 
-            IconButton(onClick = { viewModel.skipToNext() }) { // UPDATED
+            IconButton(onClick = { viewModel.skipToNext() }) {
                 Icon(
                     imageVector = Icons.Default.SkipNext,
-                    contentDescription = "Next",
-                    modifier = Modifier.size(48.dp),
+                    contentDescription = stringResource(id = R.string.content_desc_next),
+                    modifier = Modifier.size(dimens.largeIcon),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -183,7 +184,6 @@ fun FullScreenPlayer(
     }
 }
 
-// Helper function to turn milliseconds into MM:SS format
 private fun formatDuration(durationMs: Long): String {
     val totalSeconds = durationMs / 1000
     val minutes = totalSeconds / 60

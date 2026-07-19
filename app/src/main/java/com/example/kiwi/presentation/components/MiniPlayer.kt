@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import com.example.kiwi.R
 
 @Composable
 fun MiniPlayer(
@@ -43,7 +45,7 @@ fun MiniPlayer(
     ) {
         AsyncImage(
             model = currentSong!!.coverImageUrl,
-            contentDescription = "Album Art",
+            contentDescription = stringResource(id = R.string.content_desc_album_art),
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(48.dp)
@@ -73,8 +75,10 @@ fun MiniPlayer(
         IconButton(onClick = { viewModel.togglePlayPause() }) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = "Play/Pause",
-                tint = MaterialTheme.colorScheme.onSurface
+                contentDescription = if (isPlaying)
+                    stringResource(id = R.string.content_desc_pause)
+                else
+                    stringResource(id = R.string.content_desc_play)
             )
         }
     }

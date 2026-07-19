@@ -13,98 +13,100 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.kiwi.R
+import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel(),
+    onSettingsClick: () -> Unit
 ) {
-    val downloadedCount by viewModel.downloadedCount.collectAsState()
+    val uiState by viewModel.uiState.collectAsState() // CHANGED to UiState
+    val dimens = LocalDimens.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(dimens.medium),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            IconButton(onClick = { /* We can build the Settings sheet later! */ }) {
+            IconButton(onClick = onSettingsClick) {
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings",
+                    contentDescription = stringResource(id = R.string.content_desc_settings),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         }
 
-        // Avatar
         AsyncImage(
             model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=500&auto=format&fit=crop",
-            contentDescription = "Profile Picture",
+            contentDescription = stringResource(id = R.string.content_desc_profile_picture),
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(120.dp)
+                .size(dimens.avatarSize)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimens.medium))
 
-        // User Info
         Text(
-            text = "Arian",
+            text = stringResource(id = R.string.mock_profile_name),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
 
         Text(
-            text = "Software Engineer",
+            text = stringResource(id = R.string.mock_profile_role),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = dimens.extraSmall)
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimens.extraLarge))
 
-        // Stats Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            ProfileStat(label = "Downloads", value = downloadedCount.toString())
-            ProfileStat(label = "Following", value = "1")
+        if (uiState.isLoading) {
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                ProfileStat(label = stringResource(id = R.string.label_downloads), value = uiState.downloadedCount.toString())
+                ProfileStat(label = stringResource(id = R.string.label_following), value = uiState.followingCount.toString())
+            }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimens.extraLarge))
 
-        // Recent Activity Section
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "Recent Activity",
+                text = stringResource(id = R.string.title_recent_activity),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = dimens.medium)
             )
 
             Text(
-                text = "Collaborated on a playlist with Hossein",
+                text = stringResource(id = R.string.mock_profile_activity),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
             )
         }
     }
 }
-
 @Composable
 fun ProfileStat(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {

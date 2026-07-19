@@ -1,14 +1,71 @@
 <resources>
-    <string name="app_name">کیوی</string>
+    <string name="app_name">کیوی موزیک</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_home">خانه</string>
+    <string name="nav_search">جستجو</string>
+    <string name="nav_downloads">دانلودها</string>
+    <string name="nav_playlists">پلی‌لیست‌ها</string>
+    <string name="nav_profile">پروفایل</string>
+
+    <!-- Playlists Screen -->
+    <string name="title_your_playlists">پلی‌لیست‌های شما</string>
+    <string name="status_loading_playlists">در حال بارگذاری...</string>
+    <string name="content_desc_playlist_cover">کاور پلی‌لیست</string>
+
+    <!-- Playlist Detail Screen -->
+    <string name="title_playlist_tracks">آهنگ‌های پلی‌لیست</string>
+    <string name="status_empty_playlist">هیچ آهنگی در این پلی‌لیست وجود ندارد.</string>
+    <string name="content_desc_go_back">بازگشت</string>
+
+    <!-- Profile Screen -->
+    <string name="content_desc_settings">تنظیمات</string>
+    <string name="content_desc_profile_picture">عکس پروفایل</string>
+    <string name="label_downloads">دانلودها</string>
+    <string name="label_following">دنبال‌شوندگان</string>
+    <string name="title_recent_activity">فعالیت‌های اخیر</string>
+
+    <!-- Player -->
+    <string name="toast_saved_to_downloads">در دانلودها ذخیره شد!</string>
+    <string name="content_desc_save_download">ذخیره در دانلودها</string>
 
     <!-- Top Bar -->
-    <string name="settings">تنظیمات</string>
-    <string name="notifications">اعلان‌ها</string>
+    <string name="content_desc_app_logo">لوگوی برنامه</string>
+    <string name="content_desc_notifications">اعلان‌ها</string>
 
-    <!-- Bottom Navigation -->
-    <string name="tab_home">خانه</string>
-    <string name="tab_search">جستجو</string>
-    <string name="tab_downloads">دانلودها</string>
-    <string name="tab_playlists">پلی‌لیست‌ها</string>
-    <string name="tab_profile">پروفایل</string>
+    <!-- Mini Player -->
+    <string name="status_not_playing">در حال پخش نیست</string>
+    <string name="content_desc_play">پخش</string>
+    <string name="content_desc_pause">توقف</string>
+    <string name="content_desc_next">آهنگ بعدی</string>
+    <string name="content_desc_prev">آهنگ قبلی</string>
+    <string name="content_desc_expand_player">باز کردن پلیر</string>
+
+    <string name="content_desc_album_art">کاور آلبوم</string>
+
+    <!-- Home & Downloads Screens -->
+    <string name="title_offline_library">کتابخانه آفلاین</string>
+    <string name="status_no_downloads">هنوز آهنگی دانلود نشده است.</string>
+    <string name="title_featured_tracks">آهنگ‌های ویژه</string>
+
+    <!-- Player -->
+    <string name="content_desc_close_player">بستن پلیر</string>
+    <string name="content_desc_play_pause">پخش/توقف</string>
+
+    <!-- Search Screen -->
+    <string name="placeholder_search">جستجوی آهنگ یا هنرمند...</string>
+    <string name="content_desc_search_icon">آیکون جستجو</string>
+    <string name="status_no_results">هیچ نتیجه‌ای یافت نشد.</string>
+
+    <!-- Mock Profile Data -->
+    <string name="mock_profile_name">آرین</string>
+    <string name="mock_profile_role">مهندس نرم‌افزار</string>
+    <string name="mock_profile_activity">در یک پلی‌لیست با حسین همکاری کرد</string>
+
+    <!-- Settings Screen -->
+    <string name="title_settings">تنظیمات</string>
+    <string name="pref_language">زبان</string>
+    <string name="pref_dark_mode">حالت شب (Dark Mode)</string>
+    <string name="lang_english">انگلیسی (English)</string>
+    <string name="lang_persian">فارسی</string>
 </resources>

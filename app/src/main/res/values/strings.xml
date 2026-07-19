@@ -1,14 +1,71 @@
 <resources>
-    <string name="app_name">Kiwi</string>
+    <string name="app_name">Kiwi Music</string>
+
+    <!-- Navigation Tabs -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_downloads">Downloads</string>
+    <string name="nav_playlists">Playlists</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Playlists Screen -->
+    <string name="title_your_playlists">Your Playlists</string>
+    <string name="status_loading_playlists">Loading playlists...</string>
+    <string name="content_desc_playlist_cover">Playlist Cover</string>
+
+    <!-- Playlist Detail Screen -->
+    <string name="title_playlist_tracks">Playlist Tracks</string>
+    <string name="status_empty_playlist">No tracks in this playlist.</string>
+    <string name="content_desc_go_back">Go Back</string>
+
+    <!-- Profile Screen -->
+    <string name="content_desc_settings">Settings</string>
+    <string name="content_desc_profile_picture">Profile Picture</string>
+    <string name="label_downloads">Downloads</string>
+    <string name="label_following">Following</string>
+    <string name="title_recent_activity">Recent Activity</string>
+
+    <!-- Player -->
+    <string name="toast_saved_to_downloads">Saved to Downloads!</string>
+    <string name="content_desc_save_download">Save to Downloads</string>
 
     <!-- Top Bar -->
-    <string name="settings">Settings</string>
-    <string name="notifications">Notifications</string>
+    <string name="content_desc_app_logo">App Logo</string>
+    <string name="content_desc_notifications">Notifications</string>
 
-    <!-- Bottom Navigation -->
-    <string name="tab_home">Home</string>
-    <string name="tab_search">Search</string>
-    <string name="tab_downloads">Downloads</string>
-    <string name="tab_playlists">Playlists</string>
-    <string name="tab_profile">Profile</string>
+    <!-- Mini Player -->
+    <string name="status_not_playing">Not Playing</string>
+    <string name="content_desc_play">Play</string>
+    <string name="content_desc_pause">Pause</string>
+    <string name="content_desc_next">Next Track</string>
+    <string name="content_desc_prev">Previous Track</string>
+    <string name="content_desc_expand_player">Expand Player</string>
+
+    <string name="content_desc_album_art">Album Art</string>
+
+    <!-- Home & Downloads Screens -->
+    <string name="title_offline_library">Offline Library</string>
+    <string name="status_no_downloads">No songs downloaded yet.</string>
+    <string name="title_featured_tracks">Featured Tracks</string>
+
+    <!-- Player -->
+    <string name="content_desc_close_player">Close Player</string>
+    <string name="content_desc_play_pause">Play/Pause</string>
+
+    <!-- Search Screen -->
+    <string name="placeholder_search">Search songs or artists...</string>
+    <string name="content_desc_search_icon">Search Icon</string>
+    <string name="status_no_results">No results found.</string>
+
+    <!-- Mock Profile Data -->
+    <string name="mock_profile_name">Arian</string>
+    <string name="mock_profile_role">Software Engineer</string>
+    <string name="mock_profile_activity">Collaborated on a playlist with Hossein</string>
+
+    <!-- Settings Screen -->
+    <string name="title_settings">Settings</string>
+    <string name="pref_language">Language / زبان</string>
+    <string name="pref_dark_mode">Dark Mode</string>
+    <string name="lang_english">English</string>
+    <string name="lang_persian">فارسی</string>
 </resources>

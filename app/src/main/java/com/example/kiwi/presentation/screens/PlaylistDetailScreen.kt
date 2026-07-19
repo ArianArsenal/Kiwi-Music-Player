@@ -11,10 +11,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.kiwi.R
+import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 import com.example.kiwi.presentation.viewmodel.PlaylistDetailViewModel
+
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 
 @Composable
 fun PlaylistDetailScreen(
@@ -22,48 +27,74 @@ fun PlaylistDetailScreen(
     playerViewModel: PlayerViewModel,
     onBackClick: () -> Unit
 ) {
-    val songs by viewModel.playlistSongs.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val pagedSongs = viewModel.pagedPlaylistSongs.collectAsLazyPagingItems()
+    val dimens = LocalDimens.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = dimens.medium)
     ) {
-        // Back Button & Header
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
+            modifier = Modifier.padding(top = dimens.medium, bottom = dimens.large)
         ) {
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Go Back",
+                    contentDescription = stringResource(id = R.string.content_desc_go_back),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
             Text(
-                text = "Playlist Tracks",
+                text = stringResource(id = R.string.title_playlist_tracks),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(start = 8.dp)
+                modifier = Modifier.padding(start = dimens.small)
             )
         }
 
-        if (songs.isEmpty()) {
-            Text(
-                text = "No tracks in this playlist.",
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 80.dp)
-            ) {
-                itemsIndexed(songs) { index, song ->
-                    SongItemRow(
-                        song = song,
-                        onClick = { playerViewModel.playSongList(songs, index) }
-                    )
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (pagedSongs.loadState.refresh is LoadState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else if (pagedSongs.itemCount == 0) {
+                Text(
+                    text = stringResource(id = R.string.status_empty_playlist),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = dimens.bottomNavPadding)
+                ) {
+                    items(count = pagedSongs.itemCount) { index ->
+                        val song = pagedSongs[index]
+                        if (song != null) {
+                            SongItemRow(
+                                song = song,
+                                onClick = {
+                                    val loadedSongs = pagedSongs.itemSnapshotList.items
+                                    playerViewModel.playSongList(loadedSongs, index)
+                                }
+                            )
+                        }
+                    }
+
+                    if (pagedSongs.loadState.append is LoadState.Loading) {
+                        item {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(dimens.medium)
+                                    .wrapContentWidth(Alignment.CenterHorizontally),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
             }
         }

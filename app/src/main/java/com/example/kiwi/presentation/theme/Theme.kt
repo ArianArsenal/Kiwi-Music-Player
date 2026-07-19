@@ -17,25 +17,28 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryKiwi,
+    primary = GreenPrimaryDark,
     background = BackgroundDark,
     surface = SurfaceDark,
-    onBackground = TextDark,
-    onSurface = TextDark
+    surfaceVariant = SurfaceVariantDark,
+    onBackground = OnBackgroundDark,
+    onSurface = OnSurfaceDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = PrimaryKiwi,
+    primary = GreenPrimaryLight,
     background = BackgroundLight,
     surface = SurfaceLight,
-    onBackground = TextLight,
-    onSurface = TextLight
+    surfaceVariant = SurfaceVariantLight,
+    onBackground = OnBackgroundLight,
+    onSurface = OnSurfaceLight
 )
 
 @Composable
-fun KiwiTheme(
+fun KiwiMusicPlayerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
+    // Dynamic color is available on Android 12+
+    dynamicColor: Boolean = false, // Set to false to enforce our custom colors
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -56,6 +59,7 @@ fun KiwiTheme(
         }
     }
 
+    // Inject our custom Dimensions alongside the Material Theme
     CompositionLocalProvider(LocalDimens provides Dimens()) {
         MaterialTheme(
             colorScheme = colorScheme,

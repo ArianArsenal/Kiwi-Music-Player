@@ -1,5 +1,6 @@
 package com.example.kiwi.presentation.components
 
+import androidx.compose.foundation.Image // NEW IMPORT
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -11,9 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource // NEW IMPORT
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.example.kiwi.R
 import com.example.kiwi.presentation.theme.LocalDimens
 
@@ -25,14 +26,18 @@ fun KiwiTopBar() {
     TopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Placeholder for your Adaptive Icon/Logo
-                Box(
+                // FIXED: Now pulling your actual generated App Icon!
+                Image(
+                    // CHANGED from R.mipmap.ic_launcher_round to R.drawable.app_logo
+                    painter = painterResource(id = R.drawable.kiwi_logo),
+                    contentDescription = stringResource(id = R.string.content_desc_app_logo),
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(dimens.extraLarge)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
                 )
+
                 Spacer(modifier = Modifier.width(dimens.small))
+
                 Text(
                     text = stringResource(id = R.string.app_name),
                     style = MaterialTheme.typography.titleLarge,
@@ -45,21 +50,21 @@ fun KiwiTopBar() {
             IconButton(onClick = { /* TODO: Open Settings */ }) {
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(id = R.string.settings),
+                    contentDescription = stringResource(id = R.string.content_desc_settings),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
             IconButton(onClick = { /* TODO: Open Notifications */ }) {
                 Icon(
                     imageVector = Icons.Default.Notifications,
-                    contentDescription = stringResource(id = R.string.notifications),
+                    contentDescription = stringResource(id = R.string.content_desc_notifications),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
-            // Placeholder for User Avatar
+            // We leave this one as a placeholder until we fetch the actual user's avatar from Supabase
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(dimens.extraLarge)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )

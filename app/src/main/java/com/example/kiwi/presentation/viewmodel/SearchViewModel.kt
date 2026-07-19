@@ -2,35 +2,48 @@ package com.example.kiwi.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.SongRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
+@OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val repository: SongRepository
 ) : ViewModel() {
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    private val _uiState = MutableStateFlow(SearchUiState())
+    val uiState = _uiState.asStateFlow()
 
-    private val _searchResults = MutableStateFlow<List<Song>>(emptyList())
-    val searchResults: StateFlow<List<Song>> = _searchResults.asStateFlow()
+    private val _effect = Channel<SearchEffect>()
+    val effect = _effect.receiveAsFlow()
 
-    fun onSearchQueryChange(query: String) {
-        _searchQuery.value = query
-        executeSearch(query)
-    }
+    private val queryFlow = MutableStateFlow("")
 
-    private fun executeSearch(query: String) {
-        viewModelScope.launch {
-            repository.searchSongs(query).collect { results ->
-                _searchResults.value = results
+    // The Paging Flow automatically updates when the query changes
+    val pagedSearchResults: Flow<PagingData<Song>> = queryFlow
+        .debounce(500L) // Wait 500ms after typing stops
+        .distinctUntilChanged()
+        .flatMapLatest { query ->
+            if (query.isNotBlank()) {
+                repository.getPagedSearchSongs(query)
+            } else {
+                flowOf(PagingData.empty())
+            }
+        }
+        .cachedIn(viewModelScope)
+
+    fun processIntent(intent: SearchIntent) {
+        when (intent) {
+            is SearchIntent.UpdateQuery -> {
+                _uiState.update { it.copy(query = intent.query) }
+                queryFlow.value = intent.query
             }
         }
     }

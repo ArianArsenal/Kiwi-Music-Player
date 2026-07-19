@@ -2,15 +2,18 @@ package com.example.kiwi.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Brand Colors
-val PrimaryKiwi = Color(0xFF4ED964)
+// Light Theme Colors
+val GreenPrimaryLight = Color(0xFF1DB954)
+val BackgroundLight = Color(0xFFFFFFFF)
+val SurfaceLight = Color(0xFFF3F4F6)
+val SurfaceVariantLight = Color(0xFFE5E7EB)
+val OnBackgroundLight = Color(0xFF121212)
+val OnSurfaceLight = Color(0xFF1F2937)
 
-// Light Mode
-val BackgroundLight = Color(0xFFF7F9FA)
-val SurfaceLight = Color(0xFFFFFFFF)
-val TextLight = Color(0xFF191D21)
-
-// Dark Mode
-val BackgroundDark = Color(0xFF0B0F12)
-val SurfaceDark = Color(0xFF161B22)
-val TextDark = Color(0xFFF0F4F8)
+// Dark Theme Colors
+val GreenPrimaryDark = Color(0xFF1ED760)
+val BackgroundDark = Color(0xFF121212)
+val SurfaceDark = Color(0xFF181818)
+val SurfaceVariantDark = Color(0xFF282828)
+val OnBackgroundDark = Color(0xFFFFFFFF)
+val OnSurfaceDark = Color(0xFFB3B3B3)

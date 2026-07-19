@@ -3,12 +3,12 @@ package com.example.kiwi.presentation.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.kiwi.presentation.screens.*
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
@@ -16,6 +16,9 @@ sealed class Screen(val route: String) {
     object Downloads : Screen("downloads")
     object Playlists : Screen("playlists")
     object Profile : Screen("profile")
+
+    // NEW: Settings Route
+    object Settings : Screen("settings")
 
     object PlaylistDetail : Screen("playlist_detail/{playlistId}") {
         fun createRoute(playlistId: String) = "playlist_detail/$playlistId"
@@ -25,7 +28,7 @@ sealed class Screen(val route: String) {
 @Composable
 fun KiwiNavGraph(
     navController: NavHostController,
-    playerViewModel: PlayerViewModel, // Accept the ViewModel
+    playerViewModel: PlayerViewModel,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -33,10 +36,10 @@ fun KiwiNavGraph(
         startDestination = Screen.Home.route,
         modifier = modifier
     ) {
-        // Pass it down to the Home Screen
         composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel) }
         composable(Screen.Search.route) { SearchScreen(playerViewModel = playerViewModel) }
         composable(Screen.Downloads.route) { DownloadsScreen(playerViewModel = playerViewModel) }
+
         composable(Screen.Playlists.route) {
             PlaylistsScreen(
                 onPlaylistClick = { playlistId ->
@@ -44,7 +47,21 @@ fun KiwiNavGraph(
                 }
             )
         }
-        composable(Screen.Profile.route) { ProfileScreen() }
+
+        composable(Screen.Profile.route) {
+            // FIXED: Passing the onSettingsClick parameter to bridge the UI to the NavController
+            ProfileScreen(
+                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+            )
+        }
+
+        // NEW: Settings Screen UI
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onBackClick = { navController.navigateUp() }
+            )
+        }
+
         composable(
             route = Screen.PlaylistDetail.route,
             arguments = listOf(navArgument("playlistId") { type = NavType.StringType })
@@ -54,6 +71,5 @@ fun KiwiNavGraph(
                 onBackClick = { navController.navigateUp() }
             )
         }
-
     }
 }
