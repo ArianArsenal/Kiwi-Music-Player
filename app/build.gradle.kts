@@ -69,6 +69,8 @@ dependencies {
     // Compose Navigation
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
+    implementation("androidx.palette:palette-ktx:1.0.0")
+
     // Hilt for Dependency Injection
     implementation("com.google.dagger:hilt-android:2.51.1")
     ksp("com.google.dagger:hilt-compiler:2.51.1")
