@@ -16,6 +16,7 @@ import com.example.kiwi.playback.KiwiMediaService
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -108,6 +109,13 @@ class PlayerViewModel @Inject constructor(
         mediaController?.play()
     }
 
+    override fun onCleared() {
+        mediaControllerFuture?.let { MediaController.releaseFuture(it) }
+        super.onCleared()
+    }
+
+    private var sleepTimerJob: Job? = null
+
     fun processIntent(intent: PlayerIntent) {
         when (intent) {
             is PlayerIntent.PlaySongList -> playSongList(intent.songs, intent.startIndex)
@@ -117,11 +125,25 @@ class PlayerViewModel @Inject constructor(
             }
             is PlayerIntent.SkipNext -> mediaController?.seekToNextMediaItem()
             is PlayerIntent.SkipPrevious -> mediaController?.seekToPreviousMediaItem()
+            is PlayerIntent.SetPlaybackSpeed -> setSpeed(intent.speed)
+            is PlayerIntent.SetSleepTimer -> startSleepTimer(intent.minutes)
+            is PlayerIntent.UpdateDominantColor -> _uiState.update { it.copy(dominantColor = intent.color) }
         }
     }
 
-    override fun onCleared() {
-        mediaControllerFuture?.let { MediaController.releaseFuture(it) }
-        super.onCleared()
+    private fun setSpeed(speed: Float) {
+        mediaController?.setPlaybackSpeed(speed)
+        _uiState.update { it.copy(playbackSpeed = speed) }
+    }
+
+    private fun startSleepTimer(minutes: Int) {
+        // Cancel any existing timer before starting a new one
+        sleepTimerJob?.cancel()
+        if (minutes > 0) {
+            sleepTimerJob = viewModelScope.launch {
+                delay(minutes * 60 * 1000L) // Convert minutes to milliseconds
+                mediaController?.pause()
+            }
+        }
     }
 }
