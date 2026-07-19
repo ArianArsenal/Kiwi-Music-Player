@@ -18,7 +18,7 @@ import com.example.kiwi.presentation.components.MiniPlayer
 import com.example.kiwi.presentation.navigation.KiwiNavGraph
 import com.example.kiwi.presentation.theme.KiwiMusicPlayerTheme
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
-
+import com.example.kiwi.presentation.components.ShimmerSongItemRow
 @Composable
 fun MainScreen(
     playerViewModel: PlayerViewModel = hiltViewModel()

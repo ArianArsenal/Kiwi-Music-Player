@@ -11,6 +11,8 @@ data class Dimens(
     val large: Dp = 24.dp,
     val extraLarge: Dp = 32.dp,
     val giant: Dp = 64.dp,
+    val huge: Dp = 140.dp,
+
 
     // Component specific sizes
     val iconSize: Dp = 24.dp,

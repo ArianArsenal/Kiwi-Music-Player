@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.kiwi.data.local.KiwiDatabase
 import com.example.kiwi.data.local.SongDao
+import com.example.kiwi.data.local.room.SearchHistoryDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,5 +30,11 @@ object DatabaseModule {
     @Singleton
     fun provideSongDao(database: KiwiDatabase): SongDao {
         return database.songDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideSearchHistoryDao(database: KiwiDatabase): SearchHistoryDao {
+        return database.searchHistoryDao
     }
 }

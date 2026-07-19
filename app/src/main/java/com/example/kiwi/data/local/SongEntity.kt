@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.kiwi.domain.model.Song
 
-@Entity(tableName = "downloaded_songs")
+@Entity // If you have (tableName = "something_else") here, update the DAO queries above!
 data class SongEntity(
     @PrimaryKey val id: String,
     val title: String,

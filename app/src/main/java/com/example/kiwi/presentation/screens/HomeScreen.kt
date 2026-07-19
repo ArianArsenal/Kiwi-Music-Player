@@ -1,15 +1,20 @@
 package com.example.kiwi.presentation.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -17,35 +22,41 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.example.kiwi.R
 import com.example.kiwi.domain.model.Song
+import com.example.kiwi.presentation.components.HorizontalSongSlider
+import com.example.kiwi.presentation.components.QuickActionButton
+import com.example.kiwi.presentation.components.ShimmerSongItemRow
 import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.HomeEffect
 import com.example.kiwi.presentation.viewmodel.HomeIntent
 import com.example.kiwi.presentation.viewmodel.HomeViewModel
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
-import androidx.paging.LoadState
-import androidx.paging.compose.collectAsLazyPagingItems
+import kotlinx.coroutines.delay
+import androidx.compose.ui.unit.dp
+import com.example.kiwi.presentation.components.shimmerEffect
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
-    // THIS is the magic Paging 3 function!
     val pagedSongs = viewModel.pagedSongs.collectAsLazyPagingItems()
-
     val dimens = LocalDimens.current
     val context = LocalContext.current
 
-    // 2. Handle one-time Channel effects safely
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
@@ -56,53 +67,152 @@ fun HomeScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        // We check Paging 3's built-in state to know when to show the initial loading spinner
+    Box(modifier = Modifier.fillMaxSize()) {
         if (pagedSongs.loadState.refresh is LoadState.Loading) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            // Skeleton Loading State
+            HomeSkeleton()
         } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = dimens.medium),
-                contentPadding = PaddingValues(top = dimens.medium, bottom = dimens.bottomNavPadding)
-            ) {
-                item {
-                    Text(
-                        text = stringResource(id = R.string.title_featured_tracks),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(bottom = dimens.medium)
-                    )
-                }
+            // Extract the loaded items to slice them into sections
+            val loadedSongs = pagedSongs.itemSnapshotList.items.filterNotNull()
 
-                // Paging 3 uses item count, not a direct list
-                items(count = pagedSongs.itemCount) { index ->
-                    val song = pagedSongs[index]
-                    // Paging can insert null placeholders, so we must check for null
-                    if (song != null) {
-                        SongItemRow(
-                            song = song,
-                            onClick = {
-                                // To play the current list, we need to extract the loaded items
-                                val loadedSongs = pagedSongs.itemSnapshotList.items
-                                viewModel.processIntent(HomeIntent.PlaySong(loadedSongs, index))
-                                playerViewModel.playSongList(loadedSongs, index)
-                            }
-                        )
-                    }
-                }
+            if (loadedSongs.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = dimens.bottomNavPadding)
+                ) {
 
-                // Show a mini loading spinner at the VERY BOTTOM if it is fetching the next page
-                if (pagedSongs.loadState.append is LoadState.Loading) {
+                    // 1. Auto-Scrolling Carousel (Top 3 Songs)
                     item {
-                        CircularProgressIndicator(
+                        val carouselSongs = loadedSongs.take(3)
+                        val pagerState = rememberPagerState(pageCount = { carouselSongs.size })
+
+                        // Auto-scroll logic
+                        LaunchedEffect(pagerState) {
+                            while (true) {
+                                delay(4000) // Scroll every 4 seconds
+                                val nextPage = (pagerState.currentPage + 1) % carouselSongs.size
+                                pagerState.animateScrollToPage(nextPage)
+                            }
+                        }
+
+                        HorizontalPager(
+                            state = pagerState,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .height(200.dp)
                                 .padding(dimens.medium)
-                                .wrapContentWidth(Alignment.CenterHorizontally),
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        ) { page ->
+                            val song = carouselSongs[page]
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(dimens.medium))
+                                    .clickable { playerViewModel.playSongList(carouselSongs, page) }
+                            ) {
+                                AsyncImage(
+                                    model = song.coverImageUrl,
+                                    contentDescription = "Carousel Image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                // Gradient overlay so text is readable
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
+                                                startY = 100f
+                                            )
+                                        )
+                                )
+                                Text(
+                                    text = song.title,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .padding(dimens.medium)
+                                )
+                            }
+                        }
+                    }
+
+                    // 2. Quick Actions
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = dimens.medium),
+                            verticalArrangement = Arrangement.spacedBy(dimens.small)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(dimens.small)
+                            ) {
+                                QuickActionButton(
+                                    icon = Icons.Default.Favorite,
+                                    label = stringResource(id = R.string.liked_songs),
+                                    onClick = { /* TODO */ },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                QuickActionButton(
+                                    icon = Icons.Default.PlayArrow,
+                                    label = stringResource(id = R.string.recently_played),
+                                    onClick = { /* TODO */ },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(dimens.small)
+                            ) {
+                                QuickActionButton(
+                                    icon = Icons.Default.List,
+                                    label = stringResource(id = R.string.my_playlists_home),
+                                    onClick = { /* TODO */ },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                QuickActionButton(
+                                    icon = Icons.Default.Star,
+                                    label = stringResource(id = R.string.top_artists),
+                                    onClick = { /* TODO */ },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(dimens.large))
+                    }
+
+                    // 3. LazyRow Sliders
+                    item {
+                        // Slicing the next batch of songs for Most Popular
+                        val popularSongs = loadedSongs.drop(3).take(10)
+                        if (popularSongs.isNotEmpty()) {
+                            HorizontalSongSlider(
+                                title = stringResource(id = R.string.most_popular),
+                                songs = popularSongs,
+                                onSongClick = { song ->
+                                    playerViewModel.playSongList(popularSongs, popularSongs.indexOf(song))
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(dimens.large))
+                        }
+                    }
+
+                    item {
+                        // Slicing the next batch for Newest
+                        val newestSongs = loadedSongs.drop(13).take(10)
+                        if (newestSongs.isNotEmpty()) {
+                            HorizontalSongSlider(
+                                title = stringResource(id = R.string.new_releases),
+                                songs = newestSongs,
+                                onSongClick = { song ->
+                                    playerViewModel.playSongList(newestSongs, newestSongs.indexOf(song))
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -111,42 +221,68 @@ fun HomeScreen(
 }
 
 @Composable
-fun SongItemRow(song: Song, onClick: () -> Unit) {
+fun HomeSkeleton() {
     val dimens = LocalDimens.current
 
-    Row(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = dimens.small)
-            .clip(RoundedCornerShape(dimens.small))
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable { onClick() }
-            .padding(dimens.medium)
+            .fillMaxSize()
+            .padding(horizontal = dimens.medium, vertical = dimens.medium),
+        verticalArrangement = Arrangement.spacedBy(dimens.large)
     ) {
-        AsyncImage(
-            model = song.coverImageUrl,
-            contentDescription = stringResource(id = R.string.content_desc_album_art),
-            contentScale = ContentScale.Crop,
+        // 1. Carousel Skeleton
+        Box(
             modifier = Modifier
-                .size(dimens.largeIcon)
-                .clip(RoundedCornerShape(dimens.extraSmall))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(dimens.medium))
+                .shimmerEffect()
         )
 
-        Spacer(modifier = Modifier.width(dimens.medium))
+        // 2. Quick Actions Skeleton
+        Column(verticalArrangement = Arrangement.spacedBy(dimens.small)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(dimens.small)) {
+                Box(modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(dimens.small)).shimmerEffect())
+                Box(modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(dimens.small)).shimmerEffect())
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(dimens.small)) {
+                Box(modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(dimens.small)).shimmerEffect())
+                Box(modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(dimens.small)).shimmerEffect())
+            }
+        }
 
-        Column(verticalArrangement = Arrangement.Center) {
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = song.artistName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
+        // 3. Sliders Skeleton (Repeated twice for Popular & Newest)
+        repeat(2) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .width(150.dp)
+                        .height(28.dp)
+                        .clip(RoundedCornerShape(dimens.small))
+                        .shimmerEffect()
+                )
+                Spacer(modifier = Modifier.height(dimens.medium))
+                Row(horizontalArrangement = Arrangement.spacedBy(dimens.medium)) {
+                    repeat(3) {
+                        Column {
+                            Box(
+                                modifier = Modifier
+                                    .size(140.dp) // Matches our huge size
+                                    .clip(RoundedCornerShape(dimens.small))
+                                    .shimmerEffect()
+                            )
+                            Spacer(modifier = Modifier.height(dimens.extraSmall))
+                            Box(
+                                modifier = Modifier
+                                    .width(100.dp)
+                                    .height(16.dp)
+                                    .clip(RoundedCornerShape(dimens.small))
+                                    .shimmerEffect()
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

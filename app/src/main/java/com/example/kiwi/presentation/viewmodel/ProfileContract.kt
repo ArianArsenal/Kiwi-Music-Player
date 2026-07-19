@@ -1,13 +1,16 @@
 package com.example.kiwi.presentation.viewmodel
 
 data class ProfileUiState(
-    val downloadedCount: Int = 0,
-    val followingCount: Int = 1,
-    val isLoading: Boolean = false
+    val name: String = "Arian", // Mock data placeholder
+    val avatarUrl: String = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop",
+    val isPremium: Boolean = false
 )
 
 sealed class ProfileIntent {
-    object LoadStats : ProfileIntent()
+    object UpgradeToPremium : ProfileIntent()
+    object ChangeAvatar : ProfileIntent()
 }
 
-sealed class ProfileEffect
+sealed class ProfileEffect {
+    data class ShowToast(val messageResId: Int) : ProfileEffect()
+}

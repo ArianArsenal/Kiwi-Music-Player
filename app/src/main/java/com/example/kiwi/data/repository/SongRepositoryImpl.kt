@@ -1,31 +1,32 @@
 package com.example.kiwi.data.repository
 
 import android.util.Log
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import com.example.kiwi.data.local.SongDao
 import com.example.kiwi.data.local.toDomain
 import com.example.kiwi.data.local.toEntity
+import com.example.kiwi.data.paging.PlaylistPagingSource
+import com.example.kiwi.data.paging.SongPagingSource
+import com.example.kiwi.domain.model.Playlist
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.SongRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-import com.example.kiwi.domain.model.Playlist
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import com.example.kiwi.data.paging.SongPagingSource
-import io.github.jan.supabase.postgrest.postgrest
-import com.example.kiwi.data.paging.PlaylistPagingSource
-import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.serialization.Serializable
+import javax.inject.Inject
+
 class SongRepositoryImpl @Inject constructor(
     private val supabase: SupabaseClient,
-    private val dao: SongDao // NEW: Inject the local Room DAO
+    private val dao: SongDao
 ) : SongRepository {
 
     override fun getFeaturedSongs(): Flow<List<Song>> = flow {
@@ -48,7 +49,12 @@ class SongRepositoryImpl @Inject constructor(
         try {
             val results = withContext(Dispatchers.IO) {
                 supabase.from("songs").select {
-                    filter { ilike("title", "%$query%") }
+                    filter {
+                        or {
+                            ilike("title", "%$query%")
+                            ilike("artist_name", "%$query%")
+                        }
+                    }
                 }.decodeList<Song>()
             }
             emit(results)
@@ -57,7 +63,7 @@ class SongRepositoryImpl @Inject constructor(
         }
     }
 
-    // NEW: Fetches automatically updating data directly from Room SQLite
+    // Returns Flow directly from Room, mapping the inner List entities to Domain models
     override fun getDownloadedSongs(): Flow<List<Song>> {
         return dao.getAllDownloadedSongs().map { entities ->
             entities.map { it.toDomain() }
@@ -84,7 +90,6 @@ class SongRepositoryImpl @Inject constructor(
 
     override fun getPlaylistSongs(playlistId: String): Flow<List<Song>> = flow {
         try {
-            // 1. Find all song IDs linked to this playlist from the join table
             val joinRows = withContext(Dispatchers.IO) {
                 supabase.from("playlist_songs").select {
                     filter { eq("playlist_id", playlistId) }
@@ -93,16 +98,14 @@ class SongRepositoryImpl @Inject constructor(
 
             val songIds = joinRows.map { it.song_id }
 
-            // If the playlist is empty, emit nothing and exit
             if (songIds.isEmpty()) {
                 emit(emptyList())
                 return@flow
             }
 
-            // 2. Fetch the actual song metadata using those IDs
             val songs = withContext(Dispatchers.IO) {
                 supabase.from("songs").select {
-                    filter { isIn("id", songIds) } // Only grab matching IDs
+                    filter { isIn("id", songIds) }
                 }.decodeList<Song>()
             }
 
@@ -113,7 +116,7 @@ class SongRepositoryImpl @Inject constructor(
         }
     }
 
-    // NEW: Fetches the total number of downloaded rows
+    // Returns Flow directly from Room
     override fun getDownloadedSongCount(): Flow<Int> {
         return dao.getDownloadedSongCount()
     }
@@ -127,13 +130,10 @@ class SongRepositoryImpl @Inject constructor(
             ),
             pagingSourceFactory = {
                 SongPagingSource { limit, offset ->
-                    // Make sure "songs" matches your actual Supabase table name!
                     val response = supabase.postgrest["songs"]
                         .select {
                             range(offset.toLong(), (offset + limit - 1).toLong())
                         }
-                        // If you use a DTO like PlaylistSongDTO, decode to that first, then map.
-                        // Assuming direct mapping to Song for now:
                         .decodeList<Song>()
 
                     response
@@ -147,14 +147,15 @@ class SongRepositoryImpl @Inject constructor(
             config = PagingConfig(pageSize = 20, prefetchDistance = 5),
             pagingSourceFactory = {
                 SongPagingSource { limit, offset ->
-                    // If the user cleared the search bar, don't ping the database
                     if (query.isBlank()) return@SongPagingSource emptyList()
 
                     val response = supabase.postgrest["songs"]
                         .select {
                             filter {
-                                // Searches for titles containing the query (case-insensitive)
-                                ilike("title", "%$query%")
+                                or {
+                                    ilike("title", "%$query%")
+                                    ilike("artist_name", "%$query%")
+                                }
                             }
                             range(offset.toLong(), (offset + limit - 1).toLong())
                         }
@@ -193,7 +194,6 @@ class SongRepositoryImpl @Inject constructor(
                             }
                             range(offset.toLong(), (offset + limit - 1).toLong())
                         }
-                        // Decode into the wrapper, then map to extract just the Song
                         .decodeList<PlaylistSongWrapper>()
                         .map { it.songs }
 
@@ -202,7 +202,6 @@ class SongRepositoryImpl @Inject constructor(
             }
         ).flow
     }
-
 }
 
 @Serializable

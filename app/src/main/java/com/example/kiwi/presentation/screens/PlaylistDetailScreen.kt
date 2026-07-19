@@ -2,7 +2,6 @@ package com.example.kiwi.presentation.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -17,10 +16,10 @@ import com.example.kiwi.R
 import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 import com.example.kiwi.presentation.viewmodel.PlaylistDetailViewModel
-
+import com.example.kiwi.presentation.components.SongItemRow
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-
+import com.example.kiwi.presentation.components.ShimmerSongItemRow
 @Composable
 fun PlaylistDetailScreen(
     viewModel: PlaylistDetailViewModel = hiltViewModel(),

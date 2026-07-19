@@ -25,6 +25,19 @@
     <string name="label_following">دنبال‌شوندگان</string>
     <string name="title_recent_activity">فعالیت‌های اخیر</string>
 
+    <!-- Profile Screen -->
+    <string name="profile_title">پروفایل من</string>
+    <string name="upgrade_premium">ارتقا به نسخه ویژه</string>
+    <string name="app_settings">تنظیمات برنامه</string>
+    <string name="change_language">تغییر زبان</string>
+    <string name="theme">پوسته</string>
+
+    <!-- Playlists Screen -->
+    <string name="playlists_title">لیست‌های پخش</string>
+    <string name="world_music">موسیقی جهان</string>
+    <string name="local_music">موسیقی محلی</string>
+    <string name="your_playlists">لیست‌های پخش شما</string>
+
     <!-- Player -->
     <string name="toast_saved_to_downloads">در دانلودها ذخیره شد!</string>
     <string name="content_desc_save_download">ذخیره در دانلودها</string>
@@ -68,4 +81,29 @@
     <string name="pref_dark_mode">حالت شب (Dark Mode)</string>
     <string name="lang_english">انگلیسی (English)</string>
     <string name="lang_persian">فارسی</string>
+
+    <!-- Home Screen -->
+    <string name="liked_songs">آهنگ‌های پسندیده</string>
+    <string name="recently_played">اخیراً پخش شده</string>
+    <string name="my_playlists_home">لیست‌های من</string>
+    <string name="top_artists">برترین هنرمندان</string>
+    <string name="most_popular">محبوب‌ترین‌ها</string>
+    <string name="new_releases">جدیدترین‌ها</string>
+
+    <!-- Search Screen -->
+    <string name="search_placeholder">به چه چیزی می‌خواهید گوش دهید؟</string>
+    <string name="recent_searches">جستجوهای اخیر</string>
+    <string name="no_results_found">نتیجه‌ای یافت نشد.</string>
+    <string name="filter_all">همه</string>
+    <string name="filter_songs">آهنگ‌ها</string>
+    <string name="filter_artists">هنرمندان</string>
+    <string name="filter_playlists">پلی‌لیست‌ها</string>
+
+    <!-- Downloads Screen -->
+    <string name="downloads_title">دانلودها</string>
+    <string name="no_downloaded_songs">هیچ آهنگی دانلود نشده است.</string>
+    <string name="sort_title_asc">عنوان (الف-ی)</string>
+    <string name="sort_artist_asc">هنرمند (الف-ی)</string>
+    <string name="sort_newest">جدیدترین‌ها</string>
+
 </resources>

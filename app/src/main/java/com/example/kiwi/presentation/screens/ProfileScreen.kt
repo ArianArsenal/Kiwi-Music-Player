@@ -1,10 +1,13 @@
 package com.example.kiwi.presentation.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -12,21 +15,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.kiwi.R
 import com.example.kiwi.presentation.theme.LocalDimens
+import com.example.kiwi.presentation.viewmodel.ProfileIntent
 import com.example.kiwi.presentation.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState() // CHANGED to UiState
+    val uiState by viewModel.uiState.collectAsState()
     val dimens = LocalDimens.current
 
     Column(
@@ -35,91 +42,120 @@ fun ProfileScreen(
             .padding(dimens.medium),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            IconButton(onClick = onSettingsClick) {
+        Text(
+            text = stringResource(id = R.string.profile_title), // DYNAMIC STRING
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = dimens.large)
+        )
+
+        Box(contentAlignment = Alignment.BottomEnd) {
+            AsyncImage(
+                model = uiState.avatarUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .clickable { viewModel.processIntent(ProfileIntent.ChangeAvatar) }
+            )
+
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable { viewModel.processIntent(ProfileIntent.ChangeAvatar) },
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(id = R.string.content_desc_settings),
-                    tint = MaterialTheme.colorScheme.onBackground
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
 
-        AsyncImage(
-            model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=500&auto=format&fit=crop",
-            contentDescription = stringResource(id = R.string.content_desc_profile_picture),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(dimens.avatarSize)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        )
-
         Spacer(modifier = Modifier.height(dimens.medium))
 
-        Text(
-            text = stringResource(id = R.string.mock_profile_name),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Text(
-            text = stringResource(id = R.string.mock_profile_role),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = dimens.extraSmall)
-        )
-
-        Spacer(modifier = Modifier.height(dimens.extraLarge))
-
-        if (uiState.isLoading) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                ProfileStat(label = stringResource(id = R.string.label_downloads), value = uiState.downloadedCount.toString())
-                ProfileStat(label = stringResource(id = R.string.label_following), value = uiState.followingCount.toString())
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = uiState.name,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            if (uiState.isPremium) {
+                Spacer(modifier = Modifier.width(dimens.small))
+                Icon(
+                    imageVector = Icons.Default.WorkspacePremium,
+                    contentDescription = null,
+                    tint = Color(0xFFFFD700),
+                    modifier = Modifier.size(32.dp)
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(dimens.extraLarge))
+        Spacer(modifier = Modifier.height(dimens.large))
 
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = stringResource(id = R.string.title_recent_activity),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = dimens.medium)
-            )
-
-            Text(
-                text = stringResource(id = R.string.mock_profile_activity),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-            )
+        AnimatedVisibility(visible = !uiState.isPremium) {
+            Column {
+                Button(
+                    onClick = { viewModel.processIntent(ProfileIntent.UpgradeToPremium) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37)),
+                    shape = RoundedCornerShape(dimens.medium)
+                ) {
+                    Icon(Icons.Default.Star, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(dimens.small))
+                    Text(
+                        text = stringResource(id = R.string.upgrade_premium), // DYNAMIC STRING
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(dimens.large))
+            }
         }
+
+        // DYNAMIC STRINGS
+        SettingsRow(
+            icon = Icons.Default.Settings,
+            title = stringResource(id = R.string.app_settings),
+            onClick = onSettingsClick
+        )
+        SettingsRow(icon = Icons.Default.Language, title = stringResource(id = R.string.change_language))
+        SettingsRow(icon = Icons.Default.Palette, title = stringResource(id = R.string.theme))
     }
 }
+
 @Composable
-fun ProfileStat(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun SettingsRow(
+    icon: ImageVector,
+    title: String,
+    onClick: () -> Unit = {}
+) {
+    val dimens = LocalDimens.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(dimens.small))
+            .clickable { onClick() }
+            .padding(vertical = dimens.medium, horizontal = dimens.small),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.width(dimens.medium))
         Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            text = title,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f)
         )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-        )
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

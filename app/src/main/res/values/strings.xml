@@ -25,6 +25,19 @@
     <string name="label_following">Following</string>
     <string name="title_recent_activity">Recent Activity</string>
 
+    <!-- Profile Screen -->
+    <string name="profile_title">My Profile</string>
+    <string name="upgrade_premium">Upgrade to Premium</string>
+    <string name="app_settings">App Settings</string>
+    <string name="change_language">Change Language</string>
+    <string name="theme">Theme</string>
+
+    <!-- Playlists Screen -->
+    <string name="playlists_title">Playlists</string>
+    <string name="world_music">World Music</string>
+    <string name="local_music">Local Music</string>
+    <string name="your_playlists">Your Playlists</string>
+
     <!-- Player -->
     <string name="toast_saved_to_downloads">Saved to Downloads!</string>
     <string name="content_desc_save_download">Save to Downloads</string>
@@ -68,4 +81,30 @@
     <string name="pref_dark_mode">Dark Mode</string>
     <string name="lang_english">English</string>
     <string name="lang_persian">فارسی</string>
+
+    <!-- Home Screen -->
+    <string name="liked_songs">Liked Songs</string>
+    <string name="recently_played">Recently Played</string>
+    <string name="my_playlists_home">My Playlists</string>
+    <string name="top_artists">Top Artists</string>
+    <string name="most_popular">Most Popular</string>
+    <string name="new_releases">New Releases</string>
+
+    <!-- Search Screen -->
+    <string name="search_placeholder">What do you want to listen to?</string>
+    <string name="recent_searches">Recent Searches</string>
+    <string name="no_results_found">No results found.</string>
+    <string name="filter_all">All</string>
+    <string name="filter_songs">Songs</string>
+    <string name="filter_artists">Artists</string>
+    <string name="filter_playlists">Playlists</string>
+
+    <!-- Downloads Screen -->
+    <string name="downloads_title">Downloads</string>
+    <string name="no_downloaded_songs">No downloaded songs.</string>
+    <string name="sort_title_asc">Title (A-Z)</string>
+    <string name="sort_artist_asc">Artist (A-Z)</string>
+    <string name="sort_newest">Newest First</string>
+
+
 </resources>
