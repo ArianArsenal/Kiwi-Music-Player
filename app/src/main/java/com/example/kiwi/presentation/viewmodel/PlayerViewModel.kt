@@ -2,138 +2,126 @@ package com.example.kiwi.presentation.viewmodel
 
 import android.content.ComponentName
 import android.content.Context
+import android.net.Uri
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.example.kiwi.domain.model.Song
-import com.example.kiwi.domain.repository.SongRepository
-import com.example.kiwi.service.KiwiPlaybackService
+import com.example.kiwi.playback.KiwiMediaService
+import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    @ApplicationContext context: Context,
-    private val repository: SongRepository
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    private val _uiState = MutableStateFlow(PlayerUiState())
+    val uiState = _uiState.asStateFlow()
+
+    private var mediaControllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
 
-    // NEW: We keep track of the current playlist in memory
-    private var currentPlaylist: List<Song> = emptyList()
-
-    private val _isPlaying = MutableStateFlow(false)
-    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
-
-    private val _currentSong = MutableStateFlow<Song?>(null)
-    val currentSong: StateFlow<Song?> = _currentSong.asStateFlow()
-
-    private val _currentPosition = MutableStateFlow(0L)
-    val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
-
-    private val _duration = MutableStateFlow(0L)
-    val duration: StateFlow<Long> = _duration.asStateFlow()
-
     init {
-        val sessionToken = SessionToken(context, ComponentName(context, KiwiPlaybackService::class.java))
-        val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
-
-        controllerFuture.addListener(
-            {
-                mediaController = controllerFuture.get()
-                mediaController?.addListener(object : Player.Listener {
-                    override fun onIsPlayingChanged(isPlaying: Boolean) {
-                        _isPlaying.value = isPlaying
-                    }
-                    override fun onPlaybackStateChanged(playbackState: Int) {
-                        if (playbackState == Player.STATE_READY) {
-                            _duration.value = mediaController?.duration?.coerceAtLeast(0L) ?: 0L
-                        }
-                    }
-                    // NEW: Automatically updates the UI when a song naturally finishes or gets skipped
-                    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                        mediaItem?.let { item ->
-                            val matchingSong = currentPlaylist.find { it.id == item.mediaId }
-                            _currentSong.value = matchingSong
-                        }
-                    }
-                })
-                updateProgress()
-            },
-            ContextCompat.getMainExecutor(context)
-        )
+        initializeController()
+        startProgressUpdater()
     }
 
-    private fun updateProgress() {
-        viewModelScope.launch {
-            while (true) {
-                if (mediaController?.isPlaying == true) {
-                    _currentPosition.value = mediaController?.currentPosition?.coerceAtLeast(0L) ?: 0L
+    private fun initializeController() {
+        val sessionToken = SessionToken(context, ComponentName(context, KiwiMediaService::class.java))
+        mediaControllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
+
+        mediaControllerFuture?.addListener({
+            mediaController = mediaControllerFuture?.get()
+            setupPlayerListener()
+        }, ContextCompat.getMainExecutor(context)) // Runs on the main thread
+    }
+
+    private fun setupPlayerListener() {
+        mediaController?.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                _uiState.update { it.copy(isPlaying = isPlaying) }
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                // When a new song starts, extract the metadata back into our Song model
+                mediaItem?.mediaMetadata?.let { meta ->
+                    val song = Song(
+                        id = mediaItem.mediaId,
+                        title = meta.title.toString(),
+                        artistName = meta.artist.toString(),
+                        coverImageUrl = meta.artworkUri.toString(),
+                        audioUrl = "" // Audio URL is cached internally by ExoPlayer now
+                    )
+                    _uiState.update { it.copy(currentSong = song) }
                 }
-                delay(1000L)
+            }
+        })
+    }
+
+    // Coroutine to smoothly update the progress bar while playing
+    private fun startProgressUpdater() {
+        viewModelScope.launch {
+            while (isActive) {
+                mediaController?.let { player ->
+                    if (player.isPlaying && player.duration > 0) {
+                        val progress = player.currentPosition.toFloat() / player.duration.toFloat()
+                        _uiState.update { it.copy(progress = progress) }
+                    }
+                }
+                delay(500L)
             }
         }
     }
 
-    // NEW: Accepts the whole list and the index of the clicked song
     fun playSongList(songs: List<Song>, startIndex: Int) {
-        currentPlaylist = songs
-        _currentSong.value = songs[startIndex]
-
         val mediaItems = songs.map { song ->
+            val metadata = MediaMetadata.Builder()
+                .setTitle(song.title)
+                .setArtist(song.artistName)
+                .setArtworkUri(Uri.parse(song.coverImageUrl))
+                .build()
+
             MediaItem.Builder()
                 .setMediaId(song.id)
                 .setUri(song.audioUrl)
+                .setMediaMetadata(metadata)
                 .build()
         }
 
-        // Loads the whole queue and starts at the chosen index
-        mediaController?.setMediaItems(mediaItems, startIndex, C.TIME_UNSET)
+
+        mediaController?.setMediaItems(mediaItems, startIndex, 0L)
         mediaController?.prepare()
         mediaController?.play()
     }
 
-    fun togglePlayPause() {
-        mediaController?.let {
-            if (it.isPlaying) it.pause() else it.play()
+    fun processIntent(intent: PlayerIntent) {
+        when (intent) {
+            is PlayerIntent.PlaySongList -> playSongList(intent.songs, intent.startIndex)
+            is PlayerIntent.TogglePlayPause -> {
+                if (mediaController?.isPlaying == true) mediaController?.pause()
+                else mediaController?.play()
+            }
+            is PlayerIntent.SkipNext -> mediaController?.seekToNextMediaItem()
+            is PlayerIntent.SkipPrevious -> mediaController?.seekToPreviousMediaItem()
         }
-    }
-
-    fun seekTo(position: Long) {
-        mediaController?.seekTo(position)
-        _currentPosition.value = position
-    }
-
-    // NEW: Skip commands for the UI buttons
-    fun skipToNext() {
-        mediaController?.seekToNextMediaItem()
-    }
-
-    fun skipToPrevious() {
-        mediaController?.seekToPreviousMediaItem()
     }
 
     override fun onCleared() {
-        mediaController?.release()
+        mediaControllerFuture?.let { MediaController.releaseFuture(it) }
         super.onCleared()
-    }
-
-    fun downloadCurrentSong() {
-        _currentSong.value?.let { song ->
-            viewModelScope.launch {
-                repository.saveSongLocally(song)
-            }
-        }
     }
 }

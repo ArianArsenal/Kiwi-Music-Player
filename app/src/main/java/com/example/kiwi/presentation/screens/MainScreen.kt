@@ -17,8 +17,9 @@ import com.example.kiwi.presentation.components.KiwiTopBar
 import com.example.kiwi.presentation.components.MiniPlayer
 import com.example.kiwi.presentation.navigation.KiwiNavGraph
 import com.example.kiwi.presentation.theme.KiwiMusicPlayerTheme
+import com.example.kiwi.presentation.viewmodel.PlayerIntent
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
-import com.example.kiwi.presentation.components.ShimmerSongItemRow
+
 @Composable
 fun MainScreen(
     playerViewModel: PlayerViewModel = hiltViewModel()
@@ -26,16 +27,26 @@ fun MainScreen(
     val navController = rememberNavController()
     var isPlayerExpanded by rememberSaveable { mutableStateOf(false) }
 
+    val playerState by playerViewModel.uiState.collectAsState()
+
     KiwiMusicPlayerTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 topBar = { KiwiTopBar() },
                 bottomBar = {
                     Column {
-                        MiniPlayer(
-                            viewModel = playerViewModel,
-                            onExpand = { isPlayerExpanded = true }
-                        )
+
+                        playerState.currentSong?.let { song ->
+                            MiniPlayer(
+                                song = song,
+                                isPlaying = playerState.isPlaying,
+                                progress = playerState.progress,
+                                onPlayPauseClick = { playerViewModel.processIntent(PlayerIntent.TogglePlayPause) },
+                                onNextClick = { playerViewModel.processIntent(PlayerIntent.SkipNext) },
+                                onNavigateToPlayer = { isPlayerExpanded = true } // Triggers your FullScreen overlay!
+                            )
+                        }
+
                         KiwiBottomNavBar(navController = navController)
                     }
                 },
@@ -50,7 +61,6 @@ fun MainScreen(
                         .background(MaterialTheme.colorScheme.background)
                 )
             }
-
             AnimatedVisibility(
                 visible = isPlayerExpanded,
                 enter = slideInVertically(initialOffsetY = { it }),
