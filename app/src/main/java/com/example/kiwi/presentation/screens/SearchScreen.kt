@@ -1,5 +1,6 @@
 package com.example.kiwi.presentation.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,13 +19,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.kiwi.R
 import com.example.kiwi.presentation.components.ShimmerSongItemRow
 import com.example.kiwi.presentation.components.SongItemRow
@@ -32,6 +36,7 @@ import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 import com.example.kiwi.presentation.viewmodel.SearchIntent
 import com.example.kiwi.presentation.viewmodel.SearchViewModel
+import com.example.kiwi.worker.DownloadWorker
 
 @Composable
 fun SearchScreen(
@@ -42,6 +47,9 @@ fun SearchScreen(
     val recentSearches by viewModel.recentSearches.collectAsState()
     val pagedSearchResults = viewModel.pagedSearchResults.collectAsLazyPagingItems()
     val dimens = LocalDimens.current
+    val context = LocalContext.current
+
+    val isPremiumUser = true // Premium barrier flag
 
     val filters = listOf(
         "All" to R.string.filter_all,
@@ -59,7 +67,7 @@ fun SearchScreen(
             value = uiState.query,
             onValueChange = { viewModel.processIntent(SearchIntent.UpdateQuery(it)) },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = {Text(stringResource(id = R.string.search_placeholder))},
+            placeholder = { Text(stringResource(id = R.string.search_placeholder)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
             shape = RoundedCornerShape(dimens.medium),
             singleLine = true,
@@ -75,21 +83,18 @@ fun SearchScreen(
 
         Spacer(modifier = Modifier.height(dimens.small))
 
-        // 1. Filter Chips
         LazyRow(horizontalArrangement = Arrangement.spacedBy(dimens.small)) {
             items(filters) { (filterKey, labelResId) ->
                 FilterChip(
                     selected = uiState.currentFilter == filterKey,
                     onClick = { viewModel.processIntent(SearchIntent.UpdateFilter(filterKey)) },
-                    label = { Text(stringResource(id = labelResId)) } // UPDATED
+                    label = { Text(stringResource(id = labelResId)) }
                 )
             }
         }
-
         Spacer(modifier = Modifier.height(dimens.medium))
 
         Box(modifier = Modifier.fillMaxSize()) {
-            // 2. Show History when query is empty
             if (uiState.query.isEmpty()) {
                 if (recentSearches.isNotEmpty()) {
                     LazyColumn {
@@ -126,7 +131,6 @@ fun SearchScreen(
                     }
                 }
             } else {
-                // 3. Show Results (or Shimmer)
                 if (pagedSearchResults.loadState.refresh is LoadState.Loading) {
                     LazyColumn(contentPadding = PaddingValues(bottom = dimens.bottomNavPadding)) {
                         items(6) { ShimmerSongItemRow() }
@@ -139,10 +143,27 @@ fun SearchScreen(
                             pagedSearchResults[index]?.let { song ->
                                 SongItemRow(
                                     song = song,
+                                    isPremium = isPremiumUser,
                                     onClick = {
                                         viewModel.processIntent(SearchIntent.SaveQuery(song.title))
-                                        val loadedSongs = pagedSearchResults.itemSnapshotList.items
+                                        val loadedSongs = pagedSearchResults.itemSnapshotList.items.filterNotNull()
                                         playerViewModel.playSongList(loadedSongs, index)
+                                    },
+                                    onDownloadClick = { clickedSong ->
+                                        if (isPremiumUser) {
+                                            val workData = Data.Builder()
+                                                .putString("SONG_ID", clickedSong.id)
+                                                .putString("AUDIO_URL", clickedSong.audioUrl)
+                                                .build()
+                                            val downloadRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+                                                .setInputData(workData)
+                                                .build()
+
+                                            WorkManager.getInstance(context).enqueue(downloadRequest)
+                                            Toast.makeText(context, "Downloading ${clickedSong.title}...", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "Upgrade to Premium to download songs offline!", Toast.LENGTH_LONG).show()
+                                        }
                                     }
                                 )
                             }

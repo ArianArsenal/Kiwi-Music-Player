@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
+import java.io.File
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     @ApplicationContext private val context: Context
@@ -95,14 +95,20 @@ class PlayerViewModel @Inject constructor(
                 .setArtist(song.artistName)
                 .setArtworkUri(Uri.parse(song.coverImageUrl))
                 .build()
+            // SMART PLAYBACK CHECK: Does this file exist locally?
+            val localFile = File(context.filesDir, "${song.id}.mp3")
+            val finalAudioUri = if (localFile.exists()) {
+                Uri.fromFile(localFile) // Play offline!
+            } else {
+                Uri.parse(song.audioUrl) // Stream online
+            }
 
             MediaItem.Builder()
                 .setMediaId(song.id)
-                .setUri(song.audioUrl)
+                .setUri(finalAudioUri) // Use the smart URI here
                 .setMediaMetadata(metadata)
                 .build()
         }
-
 
         mediaController?.setMediaItems(mediaItems, startIndex, 0L)
         mediaController?.prepare()
