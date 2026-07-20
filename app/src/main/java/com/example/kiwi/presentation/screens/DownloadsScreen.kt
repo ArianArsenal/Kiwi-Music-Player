@@ -15,7 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.kiwi.R
 import com.example.kiwi.presentation.components.ShimmerSongItemRow
 import com.example.kiwi.presentation.components.SongItemRow
 import com.example.kiwi.presentation.theme.LocalDimens
@@ -24,8 +26,6 @@ import com.example.kiwi.presentation.viewmodel.DownloadsIntent
 import com.example.kiwi.presentation.viewmodel.DownloadsViewModel
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 import com.example.kiwi.presentation.viewmodel.SortOrder
-import androidx.compose.ui.res.stringResource
-import com.example.kiwi.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +51,6 @@ fun DownloadsScreen(
             .fillMaxSize()
             .padding(dimens.medium)
     ) {
-        // Header with Sort Dropdown
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -72,7 +71,6 @@ fun DownloadsScreen(
                     onDismissRequest = { expanded = false }
                 ) {
                     SortOrder.values().forEach { order ->
-                        // Map the enum to the localized string resource
                         val labelResId = when (order) {
                             SortOrder.TITLE_ASC -> R.string.sort_title_asc
                             SortOrder.ARTIST_ASC -> R.string.sort_artist_asc
@@ -80,7 +78,7 @@ fun DownloadsScreen(
                         }
 
                         DropdownMenuItem(
-                            text = { Text(stringResource(id = labelResId)) }, // UPDATED
+                            text = { Text(stringResource(id = labelResId)) },
                             onClick = {
                                 viewModel.processIntent(DownloadsIntent.ChangeSortOrder(order))
                                 expanded = false
@@ -95,8 +93,6 @@ fun DownloadsScreen(
         }
 
         Spacer(modifier = Modifier.height(dimens.medium))
-
-        // Content
         if (uiState.isLoading) {
             LazyColumn { items(6) { ShimmerSongItemRow() } }
         } else if (uiState.downloadedSongs.isEmpty()) {
@@ -107,7 +103,7 @@ fun DownloadsScreen(
             LazyColumn(contentPadding = PaddingValues(bottom = dimens.bottomNavPadding)) {
                 itemsIndexed(
                     items = uiState.downloadedSongs,
-                    key = { _, song -> song.id } // Required for smooth swipe animations
+                    key = { _, song -> song.id }
                 ) { index, song ->
 
                     val dismissState = rememberSwipeToDismissBoxState(
@@ -142,11 +138,12 @@ fun DownloadsScreen(
                             }
                         },
                         content = {
-                            // Wrapping the row in a surface ensures the red background stays hidden until swiped
                             Surface(color = MaterialTheme.colorScheme.background) {
                                 SongItemRow(
                                     song = song,
-                                    onClick = { playerViewModel.playSongList(uiState.downloadedSongs, index) }
+                                    isPremium = true, // Already local, button defaults to primary tint
+                                    onClick = { playerViewModel.playSongList(uiState.downloadedSongs, index) },
+                                    onDownloadClick = { /* Already downloaded, no action needed */ }
                                 )
                             }
                         }

@@ -3,6 +3,10 @@ package com.example.kiwi.presentation.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,7 +22,9 @@ import com.example.kiwi.presentation.theme.LocalDimens
 @Composable
 fun SongItemRow(
     song: Song,
-    onClick: () -> Unit
+    isPremium: Boolean = false, // Added premium check
+    onClick: () -> Unit,
+    onDownloadClick: (Song) -> Unit = {} // Added download action
 ) {
     val dimens = LocalDimens.current
 
@@ -56,6 +62,16 @@ fun SongItemRow(
                 overflow = TextOverflow.Ellipsis
             )
         }
+
+        // The Premium Barrier Download Button
+        IconButton(onClick = { onDownloadClick(song) }) {
+            Icon(
+                imageVector = Icons.Default.Download,
+                contentDescription = "Download Song",
+                // Visually dim the icon if the user isn't premium to signal it's locked
+                tint = if (isPremium) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            )
+        }
     }
 }
 
@@ -74,13 +90,12 @@ fun ShimmerSongItemRow() {
             modifier = Modifier
                 .size(dimens.extraLarge)
                 .clip(RoundedCornerShape(dimens.small))
-                .shimmerEffect() // Applying our custom modifier
+                .shimmerEffect()
         )
 
         Spacer(modifier = Modifier.width(dimens.medium))
 
         Column(modifier = Modifier.weight(1f)) {
-            // Shimmering Title
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.6f)
@@ -89,7 +104,6 @@ fun ShimmerSongItemRow() {
                     .shimmerEffect()
             )
             Spacer(modifier = Modifier.height(dimens.extraSmall))
-            // Shimmering Artist
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.4f)

@@ -5,23 +5,33 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.net.URL
 
 class DownloadWorker(
-    context: Context,
+    private val context: Context,
     params: WorkerParameters
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         val songId = inputData.getString("SONG_ID") ?: return Result.failure()
         val audioUrl = inputData.getString("AUDIO_URL") ?: return Result.failure()
-        val songTitle = inputData.getString("SONG_TITLE") ?: "Unknown Song"
 
         return withContext(Dispatchers.IO) {
             try {
-                // TODO in Batch 2:
-                // 1. Open HTTP connection to audioUrl
-                // 2. Stream bytes to context.filesDir
-                // 3. Save the new file path to the local database
+                // 1. Create a reference to a local file named "{songId}.mp3"
+                val file = File(context.filesDir, "$songId.mp3")
+
+                // 2. Open a connection to the remote URL and stream the bytes
+                URL(audioUrl).openStream().use { input ->
+                    FileOutputStream(file).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                // (Optional) Here you could also insert a record into a local Room database
+                // to list out "Downloaded Songs" in your Downloads Screen.
 
                 Result.success()
             } catch (e: Exception) {
