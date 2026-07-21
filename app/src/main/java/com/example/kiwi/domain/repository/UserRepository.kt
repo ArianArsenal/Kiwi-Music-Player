@@ -8,6 +8,8 @@ import javax.inject.Singleton
 @Singleton
 class UserRepository @Inject constructor() {
 
+    // In a real production app, this would read from DataStore or Supabase Auth.
+    // For now, it defaults to false.
     private val _isPremium = MutableStateFlow(false)
     val isPremium = _isPremium.asStateFlow()
 

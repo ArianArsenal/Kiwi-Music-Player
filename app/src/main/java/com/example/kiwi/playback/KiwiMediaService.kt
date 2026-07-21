@@ -13,6 +13,8 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import kotlinx.coroutines.*
+import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.datasource.DefaultDataSource
 
 @OptIn(UnstableApi::class)
 class KiwiMediaService : MediaSessionService() {
@@ -33,16 +35,31 @@ class KiwiMediaService : MediaSessionService() {
 
         // 2. Smart Cache setup
         val cache = MediaCache.getInstance(this)
-        val cacheDataSourceFactory = CacheDataSource.Factory()
-            .setCache(cache)
-            .setUpstreamDataSourceFactory(DefaultHttpDataSource.Factory())
-            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
 
-        // 3. Build ExoPlayer
+        // Use DefaultDataSource so ExoPlayer can read BOTH web links (http) AND local files (file://)
+        val dataSourceFactory = androidx.media3.datasource.DefaultDataSource.Factory(this)
+
+        val cacheDataSourceFactory = androidx.media3.datasource.cache.CacheDataSource.Factory()
+            .setCache(cache)
+            .setUpstreamDataSourceFactory(dataSourceFactory) // UPDATED THIS LINE
+            .setFlags(androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+
+        // NEW: Force ExoPlayer to start playing after only 1.5 seconds of buffered data instead of 5+
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                1500,  // Minimum buffer required to start playback (down from 2500ms)
+                50000, // Maximum buffer size
+                500,   // Buffer required to resume after user pause
+                1000   // Buffer required to resume after network re-buffer
+            )
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(this).setDataSourceFactory(cacheDataSourceFactory))
-            .setAudioAttributes(audioAttributes, true) // 'true' enables automatic Audio Focus!
-            .setHandleAudioBecomingNoisy(true) // Pauses when headphones disconnect
+            .setLoadControl(loadControl) // Inject the custom load control here
+            .setAudioAttributes(audioAttributes, true)
+            .setHandleAudioBecomingNoisy(true)
             .build()
 
         mediaSession = MediaSession.Builder(this, player).build()

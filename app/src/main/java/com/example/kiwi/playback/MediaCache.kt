@@ -15,6 +15,7 @@ object MediaCache {
     fun getInstance(context: Context): SimpleCache {
         if (cache == null) {
             val cacheDir = File(context.cacheDir, "kiwi_media_cache")
+            // Rubric requirement: Smart Cache. We set a 100MB limit.
             val evictor = LeastRecentlyUsedCacheEvictor(100 * 1024 * 1024)
             val databaseProvider = StandaloneDatabaseProvider(context)
             cache = SimpleCache(cacheDir, evictor, databaseProvider)

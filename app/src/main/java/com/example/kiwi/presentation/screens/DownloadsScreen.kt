@@ -93,6 +93,7 @@ fun DownloadsScreen(
         }
 
         Spacer(modifier = Modifier.height(dimens.medium))
+
         if (uiState.isLoading) {
             LazyColumn { items(6) { ShimmerSongItemRow() } }
         } else if (uiState.downloadedSongs.isEmpty()) {
@@ -141,9 +142,9 @@ fun DownloadsScreen(
                             Surface(color = MaterialTheme.colorScheme.background) {
                                 SongItemRow(
                                     song = song,
-                                    isPremium = true, // Already local, button defaults to primary tint
-                                    onClick = { playerViewModel.playSongList(uiState.downloadedSongs, index) },
-                                    onDownloadClick = { /* Already downloaded, no action needed */ }
+                                    isPremium = true,
+                                    showDownloadIcon = false, // Hides the redundant button on the downloads tab!
+                                    onClick = { playerViewModel.playSongList(uiState.downloadedSongs, index) }
                                 )
                             }
                         }

@@ -32,7 +32,13 @@ import com.example.kiwi.presentation.components.AudioVisualizer
 import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.PlayerIntent
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
+import com.example.kiwi.worker.DownloadWorker
 import kotlinx.coroutines.delay
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import android.widget.Toast
+
 
 @Composable
 fun FullScreenPlayer(
@@ -43,6 +49,9 @@ fun FullScreenPlayer(
     val song = uiState.currentSong ?: return
     val dimens = LocalDimens.current
     val context = LocalContext.current
+
+    var showMenu by remember { mutableStateOf(false) }
+    val isPremiumUser by viewModel.isPremium.collectAsState()
 
     // Dynamic Background Color Animation
     val targetColor = uiState.dominantColor?.let { Color(it) } ?: MaterialTheme.colorScheme.background
@@ -63,7 +72,6 @@ fun FullScreenPlayer(
             }
         }
     }
-
 
     Box(
         modifier = Modifier
@@ -102,8 +110,40 @@ fun FullScreenPlayer(
                     Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Close")
                 }
                 Text("Now Playing", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.CenterVertically))
-                IconButton(onClick = { /* TODO: Context menu */ }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "More")
+
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More")
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Download") },
+                            leadingIcon = { Icon(Icons.Default.Download, contentDescription = null) },
+                            onClick = {
+                                showMenu = false
+                                if (isPremiumUser) {
+                                    val workData = androidx.work.Data.Builder()
+                                        .putString("SONG_ID", song.id)
+                                        .putString("AUDIO_URL", song.audioUrl)
+                                        .putString("SONG_TITLE", song.title)
+                                        .putString("ARTIST_NAME", song.artistName)
+                                        .putString("COVER_URL", song.coverImageUrl)
+                                        .build()
+
+                                    val request = OneTimeWorkRequestBuilder<DownloadWorker>()
+                                        .setInputData(workData).build()
+
+                                    WorkManager.getInstance(context).enqueue(request)
+                                    Toast.makeText(context, "Downloading ${song.title}...", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "Upgrade to Premium to download!", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        )
+                    }
                 }
             }
 
@@ -147,7 +187,6 @@ fun FullScreenPlayer(
 
             // Replaced weight(1f) with a fixed spacer for the scrollable column
             Spacer(modifier = Modifier.height(dimens.extraLarge))
-
 
             // Song Info
             Text(

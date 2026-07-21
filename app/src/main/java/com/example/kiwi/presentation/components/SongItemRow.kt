@@ -23,6 +23,7 @@ import com.example.kiwi.presentation.theme.LocalDimens
 fun SongItemRow(
     song: Song,
     isPremium: Boolean = false, // Added premium check
+    showDownloadIcon: Boolean = true,
     onClick: () -> Unit,
     onDownloadClick: (Song) -> Unit = {} // Added download action
 ) {
@@ -63,14 +64,14 @@ fun SongItemRow(
             )
         }
 
-        // The Premium Barrier Download Button
-        IconButton(onClick = { onDownloadClick(song) }) {
-            Icon(
-                imageVector = Icons.Default.Download,
-                contentDescription = "Download Song",
-                // Visually dim the icon if the user isn't premium to signal it's locked
-                tint = if (isPremium) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-            )
+        if (showDownloadIcon) {
+            IconButton(onClick = { onDownloadClick(song) }) {
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = "Download Song",
+                    tint = if (isPremium) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                )
+            }
         }
     }
 }

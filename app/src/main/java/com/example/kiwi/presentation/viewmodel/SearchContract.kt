@@ -1,6 +1,7 @@
 package com.example.kiwi.presentation.viewmodel
 
-import com.example.kiwi.data.local.room.SearchHistoryEntity
+import com.example.kiwi.data.local.SearchHistoryEntity
+
 
 data class SearchUiState(
     val query: String = "",

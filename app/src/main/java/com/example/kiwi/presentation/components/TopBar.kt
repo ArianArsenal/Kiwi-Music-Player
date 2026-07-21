@@ -17,14 +17,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.example.kiwi.R
 import com.example.kiwi.presentation.theme.LocalDimens
-
+import androidx.compose.material.icons.filled.Chat
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KiwiTopBar(
     onSettingsClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onChatClick: () -> Unit
 ) {
     val dimens = LocalDimens.current
 
@@ -55,10 +56,10 @@ fun KiwiTopBar(
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
-            IconButton(onClick = { /* TODO: Notifications */ }) {
+            IconButton(onClick = onChatClick) {
                 Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = stringResource(id = R.string.content_desc_notifications),
+                    imageVector = Icons.Default.Chat, // Replaces the Bell icon
+                    contentDescription = "Direct Messages",
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }

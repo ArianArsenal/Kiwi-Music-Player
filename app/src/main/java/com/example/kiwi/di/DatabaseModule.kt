@@ -2,9 +2,12 @@ package com.example.kiwi.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.kiwi.data.local.ChatDao
+import com.example.kiwi.data.local.DownloadedFilesDao
 import com.example.kiwi.data.local.KiwiDatabase
+import com.example.kiwi.data.local.LikedSongsDao
 import com.example.kiwi.data.local.SongDao
-import com.example.kiwi.data.local.room.SearchHistoryDao
+import com.example.kiwi.data.local.SearchHistoryDao // FIXED: Corrected import path
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,7 +26,7 @@ object DatabaseModule {
             context,
             KiwiDatabase::class.java,
             "kiwi_local_db"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
@@ -32,9 +35,27 @@ object DatabaseModule {
         return database.songDao
     }
 
+    // FIXED: Changed parameter from AppDatabase to KiwiDatabase
+    @Provides
+    fun provideSearchHistoryDao(database: KiwiDatabase): SearchHistoryDao {
+        return database.searchHistoryDao()
+    }
+
+    // FIXED: Changed parameter from AppDatabase to KiwiDatabase
+    @Provides
+    fun provideLikedSongsDao(database: KiwiDatabase): LikedSongsDao {
+        return database.likedSongsDao()
+    }
+
+    // FIXED: Changed parameter from AppDatabase to KiwiDatabase
+    @Provides
+    fun provideDownloadedFilesDao(database: KiwiDatabase): DownloadedFilesDao {
+        return database.downloadedFilesDao()
+    }
+
     @Provides
     @Singleton
-    fun provideSearchHistoryDao(database: KiwiDatabase): SearchHistoryDao {
-        return database.searchHistoryDao
+    fun provideChatDao(database: KiwiDatabase): ChatDao {
+        return database.chatDao
     }
 }

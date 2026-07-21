@@ -38,7 +38,7 @@ fun PlaylistDetailScreen(
     val context = LocalContext.current
 
     // Toggle this to test both standard and premium barriers
-    val isPremiumUser = true
+    val isPremiumUser by playerViewModel.isPremium.collectAsState()
 
     Column(
         modifier = Modifier
@@ -63,6 +63,7 @@ fun PlaylistDetailScreen(
                 modifier = Modifier.padding(start = dimens.small)
             )
         }
+
         Box(modifier = Modifier.fillMaxSize()) {
             if (pagedSongs.loadState.refresh is LoadState.Loading) {
                 CircularProgressIndicator(
@@ -91,9 +92,12 @@ fun PlaylistDetailScreen(
                                 },
                                 onDownloadClick = { clickedSong ->
                                     if (isPremiumUser) {
-                                        val workData = Data.Builder()
+                                        val workData = androidx.work.Data.Builder()
                                             .putString("SONG_ID", clickedSong.id)
                                             .putString("AUDIO_URL", clickedSong.audioUrl)
+                                            .putString("SONG_TITLE", clickedSong.title)
+                                            .putString("ARTIST_NAME", clickedSong.artistName)
+                                            .putString("COVER_URL", clickedSong.coverImageUrl)
                                             .build()
 
                                         val downloadRequest = OneTimeWorkRequestBuilder<DownloadWorker>()

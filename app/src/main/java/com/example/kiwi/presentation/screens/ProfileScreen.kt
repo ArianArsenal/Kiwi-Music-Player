@@ -27,11 +27,12 @@ import com.example.kiwi.R
 import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.ProfileIntent
 import com.example.kiwi.presentation.viewmodel.ProfileViewModel
-
+import androidx.compose.material.icons.filled.Search
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onFindFriendsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val dimens = LocalDimens.current
@@ -122,6 +123,12 @@ fun ProfileScreen(
             }
         }
 
+        SettingsRow(
+            icon = Icons.Default.Search,
+            title = "Find Friends",
+            onClick = onFindFriendsClick
+        )
+
         // DYNAMIC STRINGS
         SettingsRow(
             icon = Icons.Default.Settings,
@@ -158,4 +165,6 @@ fun SettingsRow(
         )
         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+
+
 }

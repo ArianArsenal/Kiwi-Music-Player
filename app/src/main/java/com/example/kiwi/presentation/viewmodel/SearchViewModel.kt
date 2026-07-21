@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.example.kiwi.data.local.room.SearchHistoryDao
-import com.example.kiwi.data.local.room.SearchHistoryEntity
+import com.example.kiwi.data.local.SearchHistoryDao
+import com.example.kiwi.data.local.SearchHistoryEntity
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.SongRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,12 +56,19 @@ class SearchViewModel @Inject constructor(
                 _uiState.update { it.copy(currentFilter = intent.filter) }
             }
             is SearchIntent.DeleteHistoryItem -> {
-                viewModelScope.launch { searchHistoryDao.deleteSearch(intent.item) }
+                // FIXED: Extract the .query string from the entity
+                viewModelScope.launch { searchHistoryDao.deleteSearchQuery(intent.item.query) }
             }
             is SearchIntent.SaveQuery -> {
                 if (intent.query.isNotBlank()) {
                     viewModelScope.launch {
-                        searchHistoryDao.insertSearch(SearchHistoryEntity(query = intent.query.trim()))
+                        // FIXED: Uses the correct insert method and provides the timestamp
+                        searchHistoryDao.insertSearchQuery(
+                            SearchHistoryEntity(
+                                query = intent.query.trim(),
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
                     }
                 }
             }

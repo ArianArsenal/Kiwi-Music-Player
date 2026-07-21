@@ -28,7 +28,7 @@ fun MiniPlayer(
     progress: Float,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
-    onNavigateToPlayer: () -> Unit
+    onNavigateToPlayer: () -> Unit // We will use this in Batch 3 for the Now Playing screen!
 ) {
     val dimens = LocalDimens.current
 
@@ -94,7 +94,6 @@ fun MiniPlayer(
                     )
                 }
             }
-
 
             // Thin progress bar across the bottom
             LinearProgressIndicator(

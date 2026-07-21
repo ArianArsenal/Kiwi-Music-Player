@@ -2,6 +2,7 @@ package com.example.kiwi.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -40,6 +41,26 @@ fun KiwiNavGraph(
         composable(Screen.Search.route) { SearchScreen(playerViewModel = playerViewModel) }
         composable(Screen.Downloads.route) { DownloadsScreen(playerViewModel = playerViewModel) }
 
+        composable("social_search_screen") {
+            com.example.kiwi.presentation.screens.SocialSearchScreen(navController = navController)
+        }
+
+        composable("user_profile/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+
+            com.example.kiwi.presentation.screens.UserProfileScreen(
+                userId = userId,
+                onBackClick = { navController.popBackStack() },
+                onPlaylistClick = { playlistId ->
+                    navController.navigate("playlist_detail/$playlistId")
+                },
+                onMessageClick = { id, name ->
+                    // Navigates directly into the chat with the dynamic user!
+                    navController.navigate("chat_screen/$id/$name")
+                }
+            )
+        }
+
         composable(Screen.Playlists.route) {
             PlaylistsScreen(
                 onPlaylistClick = { playlistId ->
@@ -49,9 +70,10 @@ fun KiwiNavGraph(
         }
 
         composable(Screen.Profile.route) {
-            // FIXED: Passing the onSettingsClick parameter to bridge the UI to the NavController
+            // FIXED: Passing the onSettingsClick and onFindFriendsClick parameters
             ProfileScreen(
-                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                onFindFriendsClick = { navController.navigate("social_search_screen") } // <-- NEW NAVIGATION
             )
         }
 
@@ -69,6 +91,37 @@ fun KiwiNavGraph(
             PlaylistDetailScreen(
                 playerViewModel = playerViewModel,
                 onBackClick = { navController.navigateUp() }
+            )
+        }
+
+        composable("inbox") {
+            com.example.kiwi.presentation.screens.InboxScreen(
+                onBackClick = { navController.popBackStack() },
+                onChatClick = { friendId, friendName ->
+                    // When a row is clicked, it routes to the dynamic chat screen!
+                    navController.navigate("chat_screen/$friendId/$friendName")
+                }
+            )
+        }
+
+        composable(
+            route = "chat_screen/{friendId}/{friendName}",
+            arguments = listOf(
+                navArgument("friendId") { type = NavType.StringType },
+                navArgument("friendName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
+            val friendName = backStackEntry.arguments?.getString("friendName") ?: "Friend"
+
+            val playerViewModel: com.example.kiwi.presentation.viewmodel.PlayerViewModel =
+                androidx.hilt.navigation.compose.hiltViewModel(LocalContext.current as androidx.activity.ComponentActivity)
+
+            com.example.kiwi.presentation.screens.ChatScreen(
+                friendId = friendId,
+                friendName = friendName,
+                playerViewModel = playerViewModel,
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

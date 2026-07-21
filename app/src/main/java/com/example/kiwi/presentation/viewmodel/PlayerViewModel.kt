@@ -12,6 +12,7 @@ import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.example.kiwi.domain.model.Song
+import com.example.kiwi.domain.repository.UserRepository
 import com.example.kiwi.playback.KiwiMediaService
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,11 +28,14 @@ import javax.inject.Inject
 import java.io.File
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState = _uiState.asStateFlow()
+    val isPremium = userRepository.isPremium
+    private var currentPlaylist: List<Song> = emptyList()
 
     private var mediaControllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
@@ -58,16 +62,12 @@ class PlayerViewModel @Inject constructor(
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                // When a new song starts, extract the metadata back into our Song model
-                mediaItem?.mediaMetadata?.let { meta ->
-                    val song = Song(
-                        id = mediaItem.mediaId,
-                        title = meta.title.toString(),
-                        artistName = meta.artist.toString(),
-                        coverImageUrl = meta.artworkUri.toString(),
-                        audioUrl = "" // Audio URL is cached internally by ExoPlayer now
-                    )
-                    _uiState.update { it.copy(currentSong = song) }
+                // Find the original song object that contains the real audioUrl!
+                val songId = mediaItem?.mediaId
+                val originalSong = currentPlaylist.find { it.id == songId }
+
+                if (originalSong != null) {
+                    _uiState.update { it.copy(currentSong = originalSong) }
                 }
             }
         })
@@ -89,23 +89,29 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun playSongList(songs: List<Song>, startIndex: Int) {
-        val mediaItems = songs.map { song ->
+        // Sanitize data payload: Map original song collections to direct local files if cached
+        val localizedSongs = songs.map { song ->
+            val localFile = File(context.filesDir, "${song.id}.mp3")
+            if (localFile.exists()) {
+                // Re-point the internal domain object mapping direct to local disk path URI strings
+                song.copy(audioUrl = Uri.fromFile(localFile).toString())
+            } else {
+                song
+            }
+        }
+
+        currentPlaylist = localizedSongs
+
+        val mediaItems = localizedSongs.map { song ->
             val metadata = MediaMetadata.Builder()
                 .setTitle(song.title)
                 .setArtist(song.artistName)
                 .setArtworkUri(Uri.parse(song.coverImageUrl))
                 .build()
-            // SMART PLAYBACK CHECK: Does this file exist locally?
-            val localFile = File(context.filesDir, "${song.id}.mp3")
-            val finalAudioUri = if (localFile.exists()) {
-                Uri.fromFile(localFile) // Play offline!
-            } else {
-                Uri.parse(song.audioUrl) // Stream online
-            }
 
             MediaItem.Builder()
                 .setMediaId(song.id)
-                .setUri(finalAudioUri) // Use the smart URI here
+                .setUri(Uri.parse(song.audioUrl)) // Safely parses local file paths or web links
                 .setMediaMetadata(metadata)
                 .build()
         }

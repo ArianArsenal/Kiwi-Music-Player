@@ -49,7 +49,7 @@ fun SearchScreen(
     val dimens = LocalDimens.current
     val context = LocalContext.current
 
-    val isPremiumUser = true // Premium barrier flag
+    val isPremiumUser by playerViewModel.isPremium.collectAsState()
 
     val filters = listOf(
         "All" to R.string.filter_all,
@@ -92,6 +92,7 @@ fun SearchScreen(
                 )
             }
         }
+
         Spacer(modifier = Modifier.height(dimens.medium))
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -151,10 +152,14 @@ fun SearchScreen(
                                     },
                                     onDownloadClick = { clickedSong ->
                                         if (isPremiumUser) {
-                                            val workData = Data.Builder()
+                                            val workData = androidx.work.Data.Builder()
                                                 .putString("SONG_ID", clickedSong.id)
                                                 .putString("AUDIO_URL", clickedSong.audioUrl)
+                                                .putString("SONG_TITLE", clickedSong.title)
+                                                .putString("ARTIST_NAME", clickedSong.artistName)
+                                                .putString("COVER_URL", clickedSong.coverImageUrl)
                                                 .build()
+
                                             val downloadRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
                                                 .setInputData(workData)
                                                 .build()
