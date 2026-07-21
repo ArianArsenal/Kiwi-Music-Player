@@ -12,6 +12,8 @@ import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.example.kiwi.domain.model.Song
+import com.example.kiwi.domain.repository.LikedSongsRepository
+import com.example.kiwi.domain.repository.UserPreferencesRepository
 import com.example.kiwi.domain.repository.UserRepository
 import com.example.kiwi.playback.KiwiMediaService
 import com.google.common.util.concurrent.ListenableFuture
@@ -20,25 +22,44 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import java.io.File
+
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val likedSongsRepository: LikedSongsRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState = _uiState.asStateFlow()
-    val isPremium = userRepository.isPremium
+
+    // UPDATED: Sync premium status dynamically from DataStore
+    val isPremium: StateFlow<Boolean> = userPreferencesRepository.userSettingsFlow
+        .map { it.isPremium }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Lazily,
+            initialValue = false
+        )
+
     private var currentPlaylist: List<Song> = emptyList()
 
     private var mediaControllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
+
+    // Job to track the current song's like status
+    private var observeLikeStatusJob: Job? = null
 
     init {
         initializeController()
@@ -55,6 +76,16 @@ class PlayerViewModel @Inject constructor(
         }, ContextCompat.getMainExecutor(context)) // Runs on the main thread
     }
 
+    // Function to observe the DB for the current song
+    private fun checkIfCurrentSongIsLiked(songId: String) {
+        observeLikeStatusJob?.cancel()
+        observeLikeStatusJob = viewModelScope.launch {
+            likedSongsRepository.isSongLiked(songId).collect { isLiked ->
+                _uiState.update { it.copy(isCurrentSongLiked = isLiked) }
+            }
+        }
+    }
+
     private fun setupPlayerListener() {
         mediaController?.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -68,6 +99,8 @@ class PlayerViewModel @Inject constructor(
 
                 if (originalSong != null) {
                     _uiState.update { it.copy(currentSong = originalSong) }
+                    // Trigger DB check when a new song starts
+                    checkIfCurrentSongIsLiked(originalSong.id)
                 }
             }
         })
@@ -140,6 +173,22 @@ class PlayerViewModel @Inject constructor(
             is PlayerIntent.SetPlaybackSpeed -> setSpeed(intent.speed)
             is PlayerIntent.SetSleepTimer -> startSleepTimer(intent.minutes)
             is PlayerIntent.UpdateDominantColor -> _uiState.update { it.copy(dominantColor = intent.color) }
+
+            // Handle the Like Button Click
+            is PlayerIntent.ToggleLikeCurrentSong -> {
+                val currentSong = _uiState.value.currentSong
+                if (currentSong != null) {
+                    viewModelScope.launch {
+                        likedSongsRepository.toggleLikeState(
+                            songId = currentSong.id,
+                            title = currentSong.title,
+                            artistName = currentSong.artistName,
+                            coverImageUrl = currentSong.coverImageUrl,
+                            isCurrentlyLiked = _uiState.value.isCurrentSongLiked
+                        )
+                    }
+                }
+            }
         }
     }
 

@@ -21,7 +21,17 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = UserSettings(true, 16f, "en", false)
+            initialValue = UserSettings(
+                isDarkMode = true,
+                fontSize = 16f,
+                language = "en",
+                isPremium = false,
+                isLoggedIn = false,
+                accountEmail = null,    // FIXED: Added missing parameter
+                accountPassword = null, // FIXED: Added missing parameter
+                username = null,         // FIXED: Added missing parameter
+                profilePicUri = null
+            )
         )
 
     fun toggleDarkMode(isDark: Boolean) {
@@ -46,6 +56,19 @@ class SettingsViewModel @Inject constructor(
     fun upgradeToPremium() {
         viewModelScope.launch {
             userPreferencesRepository.setPremiumStatus(true)
+        }
+    }
+
+    // Add this function inside your SettingsViewModel
+    fun logOutUser() {
+        viewModelScope.launch {
+            userPreferencesRepository.setLoggedInState(false)
+        }
+    }
+
+    fun updateProfilePicture(uri: String) {
+        viewModelScope.launch {
+            userPreferencesRepository.setProfilePictureUri(uri)
         }
     }
 }

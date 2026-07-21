@@ -142,19 +142,34 @@ class SongRepositoryImpl @Inject constructor(
         ).flow
     }
 
-    override fun getPagedSearchSongs(query: String): Flow<PagingData<Song>> {
+    override fun getPagedSearchSongs(query: String, filter: String): Flow<PagingData<Song>> {
         return Pager(
             config = PagingConfig(pageSize = 20, prefetchDistance = 5),
             pagingSourceFactory = {
                 SongPagingSource { limit, offset ->
                     if (query.isBlank()) return@SongPagingSource emptyList()
 
+                    // If the filter is Playlists, this specific endpoint shouldn't return songs.
+                    if (filter == "Playlists") return@SongPagingSource emptyList()
+
                     val response = supabase.postgrest["songs"]
                         .select {
                             filter {
-                                or {
-                                    ilike("title", "%$query%")
-                                    ilike("artist_name", "%$query%")
+                                // Apply the specific backend filter based on the UI chip
+                                when (filter) {
+                                    "Songs" -> {
+                                        ilike("title", "%$query%")
+                                    }
+                                    "Artists" -> {
+                                        ilike("artist_name", "%$query%")
+                                    }
+                                    else -> {
+                                        // "All", "Users", or any unmapped state searches both
+                                        or {
+                                            ilike("title", "%$query%")
+                                            ilike("artist_name", "%$query%")
+                                        }
+                                    }
                                 }
                             }
                             range(offset.toLong(), (offset + limit - 1).toLong())

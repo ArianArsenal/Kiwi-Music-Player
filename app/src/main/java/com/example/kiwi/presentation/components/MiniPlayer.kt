@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,6 +28,7 @@ fun MiniPlayer(
     isPlaying: Boolean,
     progress: Float,
     onPlayPauseClick: () -> Unit,
+    onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
     onNavigateToPlayer: () -> Unit // We will use this in Batch 3 for the Now Playing screen!
 ) {
@@ -86,6 +88,15 @@ fun MiniPlayer(
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
+
+                IconButton(onClick = onPreviousClick) {
+                    Icon(
+                        imageVector = Icons.Default.SkipPrevious,
+                        contentDescription = "Previous",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
                 IconButton(onClick = onNextClick) {
                     Icon(
                         imageVector = Icons.Default.SkipNext,

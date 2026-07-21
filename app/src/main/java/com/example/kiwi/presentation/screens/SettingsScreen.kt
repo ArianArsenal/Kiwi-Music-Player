@@ -3,29 +3,35 @@ package com.example.kiwi.presentation.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.kiwi.R
 import com.example.kiwi.presentation.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
+    onLogoutClick: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settingsState.collectAsState()
+    var languageMenuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("App Settings") },
+                title = { Text(stringResource(id = R.string.app_settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = null)
                     }
                 }
             )
@@ -44,7 +50,7 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Dark Mode", style = MaterialTheme.typography.titleMedium)
+                Text(text = stringResource(id = R.string.dark_mode), style = MaterialTheme.typography.titleMedium)
                 Switch(
                     checked = settings.isDarkMode,
                     onCheckedChange = { viewModel.toggleDarkMode(it) }
@@ -53,39 +59,72 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            // Font Size Slider
-            Column {
-                Text(text = "Font Size: ${settings.fontSize.toInt()}sp", style = MaterialTheme.typography.titleMedium)
-                Slider(
-                    value = settings.fontSize,
-                    onValueChange = { viewModel.setFontSize(it) },
-                    valueRange = 12f..24f,
-                    steps = 5
-                )
-            }
-
-            HorizontalDivider()
-
-            // Premium Status (Mock upgrade button)
+            // Language Selection
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(text = "Account Status", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        text = if (settings.isPremium) "Premium Member" else "Free Tier",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (settings.isPremium) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Language, contentDescription = null)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(text = stringResource(id = R.string.language), style = MaterialTheme.typography.titleMedium)
                 }
 
-                if (!settings.isPremium) {
-                    Button(onClick = { viewModel.upgradeToPremium() }) {
-                        Text("Upgrade")
+                Box {
+                    TextButton(onClick = { languageMenuExpanded = true }) {
+                        Text(if (settings.language == "en") stringResource(id = R.string.english) else stringResource(id = R.string.persian))
+                    }
+                    DropdownMenu(
+                        expanded = languageMenuExpanded,
+                        onDismissRequest = { languageMenuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.english)) },
+                            onClick = {
+                                viewModel.setLanguage("en")
+                                languageMenuExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.persian)) },
+                            onClick = {
+                                viewModel.setLanguage("fa")
+                                languageMenuExpanded = false
+                            }
+                        )
                     }
                 }
+            }
+
+            HorizontalDivider()
+
+            // RTL Layout Toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = stringResource(id = R.string.force_rtl), style = MaterialTheme.typography.titleMedium)
+                Switch(
+                    checked = settings.language == "fa",
+                    onCheckedChange = { isRtl ->
+                        val newLang = if (isRtl) "fa" else "en"
+                        viewModel.setLanguage(newLang)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            OutlinedButton(
+                onClick = onLogoutClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Icon(Icons.Default.Logout, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(id = R.string.log_out))
             }
         }
     }

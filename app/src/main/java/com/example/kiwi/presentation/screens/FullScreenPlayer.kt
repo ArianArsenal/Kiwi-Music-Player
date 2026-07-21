@@ -1,6 +1,7 @@
 package com.example.kiwi.presentation.screens
 
 import android.graphics.Bitmap
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -22,23 +23,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.kiwi.R
 import com.example.kiwi.presentation.components.AudioVisualizer
 import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.PlayerIntent
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 import com.example.kiwi.worker.DownloadWorker
 import kotlinx.coroutines.delay
-import androidx.work.Data
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import android.widget.Toast
-
 
 @Composable
 fun FullScreenPlayer(
@@ -76,15 +77,12 @@ fun FullScreenPlayer(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            // 1. Base solid color to ensure zero transparency
             .background(MaterialTheme.colorScheme.background)
-            // 2. Fully opaque gradient on top
             .background(
                 Brush.verticalGradient(
                     colors = listOf(animatedBackgroundColor, MaterialTheme.colorScheme.background)
                 )
             )
-            // 3. Swallow all clicks so you can't interact with the screen below
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -94,9 +92,7 @@ fun FullScreenPlayer(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                // 4. Push content above the Android system navigation buttons
                 .systemBarsPadding()
-                // 5. Make the page fully scrollable to fit everything on smaller screens
                 .verticalScroll(rememberScrollState())
                 .padding(dimens.large),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -107,25 +103,29 @@ fun FullScreenPlayer(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 IconButton(onClick = onClose) {
-                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Close")
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(id = R.string.close))
                 }
-                Text("Now Playing", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.CenterVertically))
+                Text(
+                    text = stringResource(id = R.string.now_playing),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
 
                 Box {
                     IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More")
+                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(id = R.string.more))
                     }
                     DropdownMenu(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Download") },
+                            text = { Text(stringResource(id = R.string.download)) },
                             leadingIcon = { Icon(Icons.Default.Download, contentDescription = null) },
                             onClick = {
                                 showMenu = false
                                 if (isPremiumUser) {
-                                    val workData = androidx.work.Data.Builder()
+                                    val workData = Data.Builder()
                                         .putString("SONG_ID", song.id)
                                         .putString("AUDIO_URL", song.audioUrl)
                                         .putString("SONG_TITLE", song.title)
@@ -137,9 +137,17 @@ fun FullScreenPlayer(
                                         .setInputData(workData).build()
 
                                     WorkManager.getInstance(context).enqueue(request)
-                                    Toast.makeText(context, "Downloading ${song.title}...", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.downloading_song, song.title),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 } else {
-                                    Toast.makeText(context, "Upgrade to Premium to download!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.upgrade_premium_download),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         )
@@ -163,7 +171,7 @@ fun FullScreenPlayer(
                         .data(song.coverImageUrl)
                         .allowHardware(false)
                         .build(),
-                    contentDescription = "CD Cover",
+                    contentDescription = stringResource(id = R.string.cd_cover),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
@@ -176,7 +184,6 @@ fun FullScreenPlayer(
                         }
                     }
                 )
-                // The hole in the middle of the CD
                 Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.background))
             }
 
@@ -185,21 +192,38 @@ fun FullScreenPlayer(
             // Canvas Audio Visualizer
             AudioVisualizer(isPlaying = uiState.isPlaying)
 
-            // Replaced weight(1f) with a fixed spacer for the scrollable column
             Spacer(modifier = Modifier.height(dimens.extraLarge))
 
-            // Song Info
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = song.artistName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-            )
+            // Song Info Row + Like Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = song.title,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = song.artistName,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    )
+                }
+
+                IconButton(
+                    onClick = { viewModel.processIntent(PlayerIntent.ToggleLikeCurrentSong) }
+                ) {
+                    Icon(
+                        imageVector = if (uiState.isCurrentSongLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = stringResource(id = R.string.like_song),
+                        tint = if (uiState.isCurrentSongLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(dimens.large))
 
@@ -221,7 +245,7 @@ fun FullScreenPlayer(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { viewModel.processIntent(PlayerIntent.SkipPrevious) }) {
-                    Icon(Icons.Default.SkipPrevious, contentDescription = "Previous", modifier = Modifier.size(48.dp))
+                    Icon(Icons.Default.SkipPrevious, contentDescription = stringResource(id = R.string.previous), modifier = Modifier.size(48.dp))
                 }
 
                 FloatingActionButton(
@@ -232,13 +256,13 @@ fun FullScreenPlayer(
                 ) {
                     Icon(
                         imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = "Play/Pause",
+                        contentDescription = stringResource(id = R.string.play_pause),
                         modifier = Modifier.size(40.dp)
                     )
                 }
 
                 IconButton(onClick = { viewModel.processIntent(PlayerIntent.SkipNext) }) {
-                    Icon(Icons.Default.SkipNext, contentDescription = "Next", modifier = Modifier.size(48.dp))
+                    Icon(Icons.Default.SkipNext, contentDescription = stringResource(id = R.string.next), modifier = Modifier.size(48.dp))
                 }
             }
 
@@ -272,9 +296,16 @@ fun FullScreenPlayer(
                         viewModel.processIntent(PlayerIntent.SetSleepTimer(minutes))
                     }
                 ) {
-                    Icon(Icons.Default.Timer, contentDescription = null, tint = if (timerActive) MaterialTheme.colorScheme.primary else LocalContentColor.current)
+                    Icon(
+                        Icons.Default.Timer,
+                        contentDescription = null,
+                        tint = if (timerActive) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(if (timerActive) "15m" else "Sleep Timer", color = if (timerActive) MaterialTheme.colorScheme.primary else LocalContentColor.current)
+                    Text(
+                        text = if (timerActive) stringResource(id = R.string.timer_15m) else stringResource(id = R.string.sleep_timer),
+                        color = if (timerActive) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                    )
                 }
             }
         }

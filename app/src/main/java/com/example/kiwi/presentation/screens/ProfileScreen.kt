@@ -1,170 +1,240 @@
 package com.example.kiwi.presentation.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.kiwi.R
-import com.example.kiwi.presentation.theme.LocalDimens
-import com.example.kiwi.presentation.viewmodel.ProfileIntent
-import com.example.kiwi.presentation.viewmodel.ProfileViewModel
-import androidx.compose.material.icons.filled.Search
+import com.example.kiwi.presentation.viewmodel.SettingsViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = hiltViewModel(),
-    onSettingsClick: () -> Unit = {},
-    onFindFriendsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit,
+    onFindFriendsClick: () -> Unit,
+    onLikedSongsClick: () -> Unit,
+    onFollowingClick: () -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val dimens = LocalDimens.current
+    val settings by viewModel.settingsState.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(dimens.medium),
-        horizontalAlignment = Alignment.CenterHorizontally
+    val username = settings.username ?: "User"
+    val premiumText = if (settings.isPremium) stringResource(id = R.string.premium_member) else stringResource(id = R.string.normal_user)
+
+    var isUpgrading by remember { mutableStateOf(false) }
+
+    // Gallery Image Picker Launcher
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.updateProfilePicture(it.toString()) }
+    }
+
+    // Removed the Scaffold completely to fix the layout gap and remove the duplicate TopBar
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp)
     ) {
-        Text(
-            text = stringResource(id = R.string.profile_title), // DYNAMIC STRING
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = dimens.large)
-        )
-
-        Box(contentAlignment = Alignment.BottomEnd) {
-            AsyncImage(
-                model = uiState.avatarUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .clickable { viewModel.processIntent(ProfileIntent.ChangeAvatar) }
-            )
-
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .clickable { viewModel.processIntent(ProfileIntent.ChangeAvatar) },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(dimens.medium))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        item {
             Text(
-                text = uiState.name,
-                style = MaterialTheme.typography.headlineSmall,
+                text = stringResource(id = R.string.profile_title),
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
+                modifier = Modifier.padding(bottom = 24.dp)
             )
-            if (uiState.isPremium) {
-                Spacer(modifier = Modifier.width(dimens.small))
-                Icon(
-                    imageVector = Icons.Default.WorkspacePremium,
-                    contentDescription = null,
-                    tint = Color(0xFFFFD700),
-                    modifier = Modifier.size(32.dp)
-                )
-            }
         }
 
-        Spacer(modifier = Modifier.height(dimens.large))
-
-        AnimatedVisibility(visible = !uiState.isPremium) {
-            Column {
-                Button(
-                    onClick = { viewModel.processIntent(ProfileIntent.UpgradeToPremium) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD4AF37)),
-                    shape = RoundedCornerShape(dimens.medium)
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Clickable Avatar
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .clickable { launcher.launch("image/*") }
                 ) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = Color.White)
-                    Spacer(modifier = Modifier.width(dimens.small))
-                    Text(
-                        text = stringResource(id = R.string.upgrade_premium), // DYNAMIC STRING
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (settings.profilePicUri.isNullOrEmpty()) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.padding(16.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    } else {
+                        AsyncImage(
+                            model = settings.profilePicUri,
+                            contentDescription = stringResource(id = R.string.content_desc_profile_picture),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(dimens.large))
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(username, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+
+                        // Premium Golden Badge
+                        if (settings.isPremium) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.Verified,
+                                contentDescription = stringResource(id = R.string.verified_premium),
+                                tint = Color(0xFFFFD700), // Gold
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Text(premiumText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+
+        // Golden Subscription Button
+        if (!settings.isPremium) {
+            item {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            isUpgrading = true
+                            delay(2000) // Simulate network request animation
+                            viewModel.upgradeToPremium()
+                            isUpgrading = false
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
+                        .animateContentSize(), // Modern layout animation
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFD700), // Gold
+                        contentColor = Color.Black
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (isUpgrading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.Black,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(stringResource(id = R.string.upgrading), fontWeight = FontWeight.Bold)
+                    } else {
+                        Icon(Icons.Default.Star, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(id = R.string.upgrade_to_premium), fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
 
-        SettingsRow(
-            icon = Icons.Default.Search,
-            title = "Find Friends",
-            onClick = onFindFriendsClick
-        )
+        item {
+            ProfileMenuItem(
+                icon = Icons.Default.Favorite,
+                title = stringResource(id = R.string.liked_songs),
+                onClick = onLikedSongsClick
+            )
+        }
 
-        // DYNAMIC STRINGS
-        SettingsRow(
-            icon = Icons.Default.Settings,
-            title = stringResource(id = R.string.app_settings),
-            onClick = onSettingsClick
-        )
-        SettingsRow(icon = Icons.Default.Language, title = stringResource(id = R.string.change_language))
-        SettingsRow(icon = Icons.Default.Palette, title = stringResource(id = R.string.theme))
+        item {
+            ProfileMenuItem(
+                icon = Icons.Default.People,
+                title = stringResource(id = R.string.following_top_artists),
+                onClick = onFollowingClick
+            )
+        }
+
+        item {
+            ProfileMenuItem(
+                icon = Icons.Default.Search,
+                title = stringResource(id = R.string.find_friends),
+                onClick = onFindFriendsClick
+            )
+        }
+
+        item {
+            ProfileMenuItem(
+                icon = Icons.Default.History,
+                title = stringResource(id = R.string.recently_played),
+                onClick = { Toast.makeText(context, context.getString(R.string.coming_soon), Toast.LENGTH_SHORT).show() }
+            )
+        }
+
+        item {
+            ProfileMenuItem(
+                icon = Icons.Default.QueueMusic,
+                title = stringResource(id = R.string.my_playlists),
+                onClick = { Toast.makeText(context, context.getString(R.string.coming_soon), Toast.LENGTH_SHORT).show() }
+            )
+        }
     }
 }
 
 @Composable
-fun SettingsRow(
-    icon: ImageVector,
+fun ProfileMenuItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit
 ) {
-    val dimens = LocalDimens.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(dimens.small))
+            .clip(MaterialTheme.shapes.medium)
             .clickable { onClick() }
-            .padding(vertical = dimens.medium, horizontal = dimens.small),
+            .padding(vertical = 16.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(modifier = Modifier.width(dimens.medium))
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.weight(1f)
         )
-        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
-
-
 }

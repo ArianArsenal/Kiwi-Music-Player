@@ -64,7 +64,7 @@ fun DownloadsScreen(
 
             Box {
                 IconButton(onClick = { expanded = true }) {
-                    Icon(Icons.Default.Sort, contentDescription = "Sort")
+                    Icon(Icons.Default.Sort, contentDescription = stringResource(id = R.string.sort))
                 }
                 DropdownMenu(
                     expanded = expanded,
@@ -84,7 +84,7 @@ fun DownloadsScreen(
                                 expanded = false
                             },
                             trailingIcon = if (uiState.sortOrder == order) {
-                                { Icon(Icons.Default.Sort, contentDescription = "Active") }
+                                { Icon(Icons.Default.Sort, contentDescription = stringResource(id = R.string.active)) }
                             } else null
                         )
                     }
@@ -133,7 +133,7 @@ fun DownloadsScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
+                                    contentDescription = stringResource(id = R.string.delete),
                                     tint = MaterialTheme.colorScheme.onErrorContainer
                                 )
                             }
@@ -143,7 +143,7 @@ fun DownloadsScreen(
                                 SongItemRow(
                                     song = song,
                                     isPremium = true,
-                                    showDownloadIcon = false, // Hides the redundant button on the downloads tab!
+                                    showDownloadIcon = false,
                                     onClick = { playerViewModel.playSongList(uiState.downloadedSongs, index) }
                                 )
                             }

@@ -20,10 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.kiwi.R
 import com.example.kiwi.presentation.components.MessageBubble
 import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.ChatViewModel
@@ -34,8 +36,8 @@ import com.example.kiwi.presentation.viewmodel.PlayerIntent
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    friendId: String, // <-- NEW
-    friendName: String, // <-- NEW
+    friendId: String,
+    friendName: String,
     viewModel: ChatViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel,
     downloadsViewModel: DownloadsViewModel = hiltViewModel(),
@@ -67,7 +69,7 @@ fun ChatScreen(
                 title = { Text(friendName) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back))
                     }
                 }
             )
@@ -76,7 +78,6 @@ fun ChatScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                // FIX: Only take the top padding, do NOT apply the bottom padding from Scaffold
                 .padding(top = paddingValues.calculateTopPadding(), bottom = 8.dp)
                 .navigationBarsPadding()
                 .imePadding()
@@ -96,11 +97,10 @@ fun ChatScreen(
                         message = message,
                         isOwnMessage = message.senderId == viewModel.currentUserId,
                         sharedSongTitle = sharedSong?.title,
-                        sharedSongArtist = "Downloaded Track",
+                        sharedSongArtist = stringResource(id = R.string.downloaded_track),
                         sharedSongCoverUrl = sharedSong?.coverImageUrl,
                         onSongClick = {
                             if (sharedSong != null) {
-                                // Replaced PlaySong with PlaySongList
                                 playerViewModel.processIntent(PlayerIntent.PlaySongList(listOf(sharedSong), 0))
                             }
                         }
@@ -110,7 +110,7 @@ fun ChatScreen(
 
             AnimatedVisibility(visible = isTyping) {
                 Text(
-                    text = "Hossein is typing...",
+                    text = stringResource(id = R.string.is_typing, friendName),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = dimens.small)
@@ -124,14 +124,14 @@ fun ChatScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { showSongPicker = true }) {
-                    Icon(Icons.Default.Share, contentDescription = "Share Song", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share_song), tint = MaterialTheme.colorScheme.primary)
                 }
 
                 OutlinedTextField(
                     value = inputText,
                     onValueChange = { viewModel.updateInputText(it) },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Message...") },
+                    placeholder = { Text(stringResource(id = R.string.message_hint)) },
                     shape = CircleShape,
                     maxLines = 3
                 )
@@ -143,7 +143,7 @@ fun ChatScreen(
                     shape = CircleShape,
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = "Send")
+                    Icon(Icons.Default.Send, contentDescription = stringResource(id = R.string.send))
                 }
             }
         }
@@ -152,12 +152,12 @@ fun ChatScreen(
     if (showSongPicker) {
         ModalBottomSheet(onDismissRequest = { showSongPicker = false }) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Share a Track", style = MaterialTheme.typography.titleLarge)
-                Text("Select a downloaded song to send", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.share_a_track), style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(id = R.string.select_downloaded_song), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (downloadsState.downloadedSongs.isEmpty()) {
-                    Text("No downloaded songs available to share.")
+                    Text(stringResource(id = R.string.no_downloaded_songs_share))
                 } else {
                     LazyColumn {
                         items(downloadsState.downloadedSongs) { song ->
@@ -172,10 +172,9 @@ fun ChatScreen(
                                     .padding(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // FIX: Display actual cover in the list
                                 AsyncImage(
-                                    model = song.coverImageUrl, // Change coverUri if your model uses a different name
-                                    contentDescription = "Cover",
+                                    model = song.coverImageUrl,
+                                    contentDescription = stringResource(id = R.string.cover),
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .size(48.dp)
@@ -190,7 +189,7 @@ fun ChatScreen(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = "Tap to share",
+                                        text = stringResource(id = R.string.tap_to_share),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

@@ -19,7 +19,12 @@ data class UserSettings(
     val isDarkMode: Boolean,
     val fontSize: Float,
     val language: String,
-    val isPremium: Boolean
+    val isPremium: Boolean,
+    val isLoggedIn: Boolean,
+    val accountEmail: String?,    // NEW
+    val accountPassword: String?, // NEW
+    val username: String?,
+    val profilePicUri: String?
 )
 
 @Singleton
@@ -31,6 +36,11 @@ class UserPreferencesRepository @Inject constructor(
         val FONT_SIZE = floatPreferencesKey("font_size")
         val LANGUAGE = stringPreferencesKey("language")
         val IS_PREMIUM = booleanPreferencesKey("is_premium")
+        val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
+        val ACCOUNT_EMAIL = stringPreferencesKey("account_email")       // NEW
+        val ACCOUNT_PASSWORD = stringPreferencesKey("account_password") // NEW
+        val USERNAME = stringPreferencesKey("username")
+        val PROFILE_PIC_URI = stringPreferencesKey("profile_pic_uri")
     }
 
     val userSettingsFlow: Flow<UserSettings> = context.dataStore.data
@@ -46,9 +56,20 @@ class UserPreferencesRepository @Inject constructor(
                 isDarkMode = preferences[PreferencesKeys.IS_DARK_MODE] ?: true, // Default to Dark Mode
                 fontSize = preferences[PreferencesKeys.FONT_SIZE] ?: 16f,       // Default font size
                 language = preferences[PreferencesKeys.LANGUAGE] ?: "en",       // Default language
-                isPremium = preferences[PreferencesKeys.IS_PREMIUM] ?: false    // Default to normal tier
+                isPremium = preferences[PreferencesKeys.IS_PREMIUM] ?: false,    // Default to normal tier
+                isLoggedIn = preferences[PreferencesKeys.IS_LOGGED_IN] ?: false,
+                accountEmail = preferences[PreferencesKeys.ACCOUNT_EMAIL],
+                accountPassword = preferences[PreferencesKeys.ACCOUNT_PASSWORD],
+                username = preferences[PreferencesKeys.USERNAME],
+                profilePicUri = preferences[PreferencesKeys.PROFILE_PIC_URI]
             )
         }
+
+    suspend fun setProfilePictureUri(uri: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.PROFILE_PIC_URI] = uri
+        }
+    }
 
     suspend fun toggleDarkMode(isDark: Boolean) {
         context.dataStore.edit { preferences ->
@@ -71,6 +92,21 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setPremiumStatus(isPremium: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_PREMIUM] = isPremium
+        }
+    }
+
+    suspend fun setLoggedInState(isLoggedIn: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_LOGGED_IN] = isLoggedIn
+        }
+    }
+
+    // NEW: Save credentials on Sign Up
+    suspend fun saveAccountCredentials(email: String, password: String, username: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ACCOUNT_EMAIL] = email
+            preferences[PreferencesKeys.ACCOUNT_PASSWORD] = password
+            preferences[PreferencesKeys.USERNAME] = username
         }
     }
 }

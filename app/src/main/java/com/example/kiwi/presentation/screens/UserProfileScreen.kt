@@ -14,11 +14,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.kiwi.R
 import com.example.kiwi.presentation.viewmodel.SocialViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,7 +30,7 @@ fun UserProfileScreen(
     viewModel: SocialViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
     onPlaylistClick: (String) -> Unit,
-    onMessageClick: (String, String) -> Unit // <-- NEW PARAMETER
+    onMessageClick: (String, String) -> Unit
 ) {
     val users by viewModel.searchResults.collectAsState()
     val user = users.find { it.id == userId }
@@ -39,7 +41,7 @@ fun UserProfileScreen(
                 title = { },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back))
                     }
                 }
             )
@@ -59,20 +61,26 @@ fun UserProfileScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
-                    contentDescription = "Avatar",
+                    contentDescription = stringResource(id = R.string.avatar),
                     modifier = Modifier.size(80.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = user.displayName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                    Text(text = "@${user.username}", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = stringResource(id = R.string.username_format, user.username),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "${user.followerCount} Followers", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = stringResource(id = R.string.followers_count, user.followerCount),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
 
-            // <-- THE NEW ACTION BUTTONS -->
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = { viewModel.toggleFollow(user.id) },
@@ -82,14 +90,14 @@ fun UserProfileScreen(
                         contentColor = if (user.isFollowing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text(if (user.isFollowing) "Following" else "Follow")
+                    Text(if (user.isFollowing) stringResource(id = R.string.btn_following) else stringResource(id = R.string.btn_follow))
                 }
 
                 OutlinedButton(
-                    onClick = { onMessageClick(user.id, user.displayName) }, // Triggers navigation
+                    onClick = { onMessageClick(user.id, user.displayName) },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Message")
+                    Text(stringResource(id = R.string.btn_message))
                 }
             }
 
@@ -97,11 +105,11 @@ fun UserProfileScreen(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(text = "Public Playlists", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = stringResource(id = R.string.public_playlists), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(12.dp))
 
             if (user.publicPlaylists.isEmpty()) {
-                Text("No public playlists available.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(id = R.string.no_public_playlists), color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 LazyColumn {
                     items(user.publicPlaylists) { playlist ->
@@ -115,7 +123,7 @@ fun UserProfileScreen(
                         ) {
                             AsyncImage(
                                 model = playlist.coverImageUrl.ifEmpty { "https://picsum.photos/200" },
-                                contentDescription = "Playlist Cover",
+                                contentDescription = stringResource(id = R.string.playlist_cover),
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .size(64.dp)
@@ -131,7 +139,7 @@ fun UserProfileScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = "By ${user.displayName}",
+                                    text = stringResource(id = R.string.by_author, user.displayName),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

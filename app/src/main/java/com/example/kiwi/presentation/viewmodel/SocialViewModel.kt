@@ -5,8 +5,11 @@ import com.example.kiwi.domain.model.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class SocialViewModel @Inject constructor() : ViewModel() {
@@ -14,6 +17,15 @@ class SocialViewModel @Inject constructor() : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
+
+    private val initialFollowedList = listOf(
+        User(id = "user_hossein", username = "hossein_dev", displayName = "Hossein", followerCount = 42, isFollowing = true),
+        User(id = "user_zakeri", username = "dr_zakeri", displayName = "Dr. Zakeri", followerCount = 150, isFollowing = true),
+        User(id = "artist_hans", username = "hans_zimmer", displayName = "Hans Zimmer", followerCount = 98000, isFollowing = true)
+    )
+
+    private val _followedUsers = MutableStateFlow(initialFollowedList)
+    val followedUsers = _followedUsers.asStateFlow()
     // Mocking the backend database of users
     private val mockUsers = listOf(
         User(
@@ -41,6 +53,16 @@ class SocialViewModel @Inject constructor() : ViewModel() {
 
     private val _searchResults = MutableStateFlow<List<User>>(mockUsers)
     val searchResults: StateFlow<List<User>> = _searchResults
+
+    fun unfollowUser(userId: String) {
+        viewModelScope.launch {
+            _followedUsers.update { currentList ->
+                // In a real app, you would make an API call here.
+                // For the UI, we simply remove them from the local state list.
+                currentList.filterNot { it.id == userId }
+            }
+        }
+    }
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query

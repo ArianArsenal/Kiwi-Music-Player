@@ -13,9 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.kiwi.R
 import com.example.kiwi.domain.model.User
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,8 +26,6 @@ fun InboxScreen(
     onBackClick: () -> Unit,
     onChatClick: (String, String) -> Unit
 ) {
-    // For now, we use a mock list of your peers.
-    // In a full production app, this would be fetched from an InboxViewModel observing a Room query.
     val recentChats = listOf(
         User(id = "user_hossein", username = "hossein_dev", displayName = "Hossein", followerCount = 42, isFollowing = true),
         User(id = "user_zakeri", username = "dr_zakeri", displayName = "Dr. Zakeri", followerCount = 150, isFollowing = false)
@@ -34,10 +34,10 @@ fun InboxScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Direct Messages", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.direct_messages), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back))
                     }
                 }
             )
@@ -56,7 +56,6 @@ fun InboxScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Avatar Placeholder
                     Surface(
                         modifier = Modifier.size(56.dp),
                         shape = CircleShape,
@@ -79,7 +78,7 @@ fun InboxScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Tap to view conversation",
+                            text = stringResource(id = R.string.tap_to_view_conversation),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,

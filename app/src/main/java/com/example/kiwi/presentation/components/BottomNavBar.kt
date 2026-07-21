@@ -12,9 +12,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.NavDestination.Companion.hierarchy
 import com.example.kiwi.R
 import com.example.kiwi.presentation.navigation.Screen
-import androidx.navigation.NavDestination.Companion.hierarchy
+
 data class BottomNavItem(
     val route: String,
     val icon: ImageVector,

@@ -51,7 +51,9 @@ import com.example.kiwi.presentation.components.shimmerEffect
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    playerViewModel: PlayerViewModel
+    playerViewModel: PlayerViewModel,
+    onLikedSongsClick: () -> Unit,
+    onPlaylistsClick: () -> Unit
 ) {
     val pagedSongs = viewModel.pagedSongs.collectAsLazyPagingItems()
     val dimens = LocalDimens.current
@@ -69,10 +71,8 @@ fun HomeScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (pagedSongs.loadState.refresh is LoadState.Loading) {
-            // Skeleton Loading State
             HomeSkeleton()
         } else {
-            // Extract the loaded items to slice them into sections
             val loadedSongs = pagedSongs.itemSnapshotList.items.filterNotNull()
 
             if (loadedSongs.isNotEmpty()) {
@@ -80,16 +80,13 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = dimens.bottomNavPadding)
                 ) {
-
-                    // 1. Auto-Scrolling Carousel (Top 3 Songs)
                     item {
                         val carouselSongs = loadedSongs.take(3)
                         val pagerState = rememberPagerState(pageCount = { carouselSongs.size })
 
-                        // Auto-scroll logic
                         LaunchedEffect(pagerState) {
                             while (true) {
-                                delay(4000) // Scroll every 4 seconds
+                                delay(4000)
                                 val nextPage = (pagerState.currentPage + 1) % carouselSongs.size
                                 pagerState.animateScrollToPage(nextPage)
                             }
@@ -111,11 +108,10 @@ fun HomeScreen(
                             ) {
                                 AsyncImage(
                                     model = song.coverImageUrl,
-                                    contentDescription = "Carousel Image",
+                                    contentDescription = stringResource(id = R.string.carousel_image),
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
                                 )
-                                // Gradient overlay so text is readable
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -139,7 +135,6 @@ fun HomeScreen(
                         }
                     }
 
-                    // 2. Quick Actions
                     item {
                         Column(
                             modifier = Modifier
@@ -154,13 +149,13 @@ fun HomeScreen(
                                 QuickActionButton(
                                     icon = Icons.Default.Favorite,
                                     label = stringResource(id = R.string.liked_songs),
-                                    onClick = { /* TODO */ },
+                                    onClick = onLikedSongsClick,
                                     modifier = Modifier.weight(1f)
                                 )
                                 QuickActionButton(
                                     icon = Icons.Default.PlayArrow,
                                     label = stringResource(id = R.string.recently_played),
-                                    onClick = { /* TODO */ },
+                                    onClick = { Toast.makeText(context, "Coming Soon!", Toast.LENGTH_SHORT).show() },
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -171,13 +166,13 @@ fun HomeScreen(
                                 QuickActionButton(
                                     icon = Icons.Default.List,
                                     label = stringResource(id = R.string.my_playlists_home),
-                                    onClick = { /* TODO */ },
+                                    onClick = onPlaylistsClick,
                                     modifier = Modifier.weight(1f)
                                 )
                                 QuickActionButton(
                                     icon = Icons.Default.Star,
                                     label = stringResource(id = R.string.top_artists),
-                                    onClick = { /* TODO */ },
+                                    onClick = { Toast.makeText(context, "Coming Soon!", Toast.LENGTH_SHORT).show() },
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -185,9 +180,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(dimens.large))
                     }
 
-                    // 3. LazyRow Sliders
                     item {
-                        // Slicing the next batch of songs for Most Popular
                         val popularSongs = loadedSongs.drop(3).take(10)
                         if (popularSongs.isNotEmpty()) {
                             HorizontalSongSlider(
@@ -202,7 +195,6 @@ fun HomeScreen(
                     }
 
                     item {
-                        // Slicing the next batch for Newest
                         val newestSongs = loadedSongs.drop(13).take(10)
                         if (newestSongs.isNotEmpty()) {
                             HorizontalSongSlider(
@@ -219,7 +211,6 @@ fun HomeScreen(
         }
     }
 }
-
 @Composable
 fun HomeSkeleton() {
     val dimens = LocalDimens.current

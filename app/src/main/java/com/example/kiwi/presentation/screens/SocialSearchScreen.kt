@@ -15,6 +15,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.kiwi.presentation.viewmodel.SocialViewModel
 import androidx.navigation.NavController
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.stringResource
+import com.example.kiwi.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SocialSearchScreen(
@@ -29,8 +32,8 @@ fun SocialSearchScreen(
             value = searchQuery,
             onValueChange = { viewModel.updateSearchQuery(it) },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search for users...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+            placeholder = { Text(stringResource(id = R.string.search_for_users)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(id = R.string.search)) },
             singleLine = true
         )
 
@@ -47,7 +50,7 @@ fun SocialSearchScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
-                        contentDescription = "Profile Picture",
+                        contentDescription = stringResource(id = R.string.profile_picture),
                         modifier = Modifier.size(48.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -56,7 +59,10 @@ fun SocialSearchScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = user.displayName, style = MaterialTheme.typography.titleMedium)
-                        Text(text = "@${user.username} • ${user.followerCount} followers", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = stringResource(id = R.string.followers_count_format, user.username, user.followerCount),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
 
                     Button(
@@ -66,7 +72,7 @@ fun SocialSearchScreen(
                             contentColor = if (user.isFollowing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
-                        Text(if (user.isFollowing) "Following" else "Follow")
+                        Text(if (user.isFollowing) stringResource(id = R.string.btn_following) else stringResource(id = R.string.btn_follow))
                     }
                 }
             }

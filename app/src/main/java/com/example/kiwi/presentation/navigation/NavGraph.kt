@@ -17,9 +17,9 @@ sealed class Screen(val route: String) {
     object Downloads : Screen("downloads")
     object Playlists : Screen("playlists")
     object Profile : Screen("profile")
-
-    // NEW: Settings Route
     object Settings : Screen("settings")
+
+    object Auth : Screen("auth_screen")
 
     object PlaylistDetail : Screen("playlist_detail/{playlistId}") {
         fun createRoute(playlistId: String) = "playlist_detail/$playlistId"
@@ -34,11 +34,27 @@ fun KiwiNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = Screen.Auth.route,
         modifier = modifier
     ) {
-        composable(Screen.Home.route) { HomeScreen(playerViewModel = playerViewModel) }
-        composable(Screen.Search.route) { SearchScreen(playerViewModel = playerViewModel) }
+
+        composable(Screen.Home.route) {
+            HomeScreen(
+                playerViewModel = playerViewModel,
+                onLikedSongsClick = { navController.navigate("liked_songs") },
+                onPlaylistsClick = { navController.navigate(Screen.Playlists.route) }
+            )
+        }
+
+        composable(Screen.Search.route) {
+            SearchScreen(
+                playerViewModel = playerViewModel,
+                onUserClick = { userId ->
+                    navController.navigate("user_profile/$userId")
+                }
+            )
+        }
+
         composable(Screen.Downloads.route) { DownloadsScreen(playerViewModel = playerViewModel) }
 
         composable("social_search_screen") {
@@ -55,7 +71,6 @@ fun KiwiNavGraph(
                     navController.navigate("playlist_detail/$playlistId")
                 },
                 onMessageClick = { id, name ->
-                    // Navigates directly into the chat with the dynamic user!
                     navController.navigate("chat_screen/$id/$name")
                 }
             )
@@ -70,17 +85,40 @@ fun KiwiNavGraph(
         }
 
         composable(Screen.Profile.route) {
-            // FIXED: Passing the onSettingsClick and onFindFriendsClick parameters
             ProfileScreen(
                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
-                onFindFriendsClick = { navController.navigate("social_search_screen") } // <-- NEW NAVIGATION
+                onFindFriendsClick = { navController.navigate("social_search_screen") },
+                onLikedSongsClick = { navController.navigate("liked_songs") },
+                onFollowingClick = { navController.navigate("following") }
             )
         }
 
-        // NEW: Settings Screen UI
         composable(Screen.Settings.route) {
+            val settingsViewModel: com.example.kiwi.presentation.viewmodel.SettingsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
             SettingsScreen(
-                onBackClick = { navController.navigateUp() }
+                onBackClick = { navController.popBackStack() },
+                onLogoutClick = {
+                    settingsViewModel.logOutUser() // <-- Calls the new ViewModel function
+                    navController.navigate(Screen.Auth.route) {
+                        popUpTo(0) // Wipe the backstack
+                    }
+                }
+            )
+        }
+
+        composable("liked_songs") {
+            com.example.kiwi.presentation.screens.LikedSongsScreen(
+                onPlayAll = { songs, startIndex ->
+                    playerViewModel.processIntent(
+                        com.example.kiwi.presentation.viewmodel.PlayerIntent.PlaySongList(songs, startIndex)
+                    )
+                }
+            )
+        }
+
+        composable("following") {
+            com.example.kiwi.presentation.screens.FollowingScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -94,11 +132,21 @@ fun KiwiNavGraph(
             )
         }
 
+        composable(Screen.Auth.route) {
+            AuthScreen(
+                onAuthSuccess = {
+                    // When login succeeds, go to Home and clear the Auth screen from history
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Auth.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable("inbox") {
             com.example.kiwi.presentation.screens.InboxScreen(
                 onBackClick = { navController.popBackStack() },
                 onChatClick = { friendId, friendName ->
-                    // When a row is clicked, it routes to the dynamic chat screen!
                     navController.navigate("chat_screen/$friendId/$friendName")
                 }
             )
@@ -114,13 +162,14 @@ fun KiwiNavGraph(
             val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
             val friendName = backStackEntry.arguments?.getString("friendName") ?: "Friend"
 
-            val playerViewModel: com.example.kiwi.presentation.viewmodel.PlayerViewModel =
+            // Renamed to avoid shadowing the global playerViewModel parameter
+            val localPlayerViewModel: com.example.kiwi.presentation.viewmodel.PlayerViewModel =
                 androidx.hilt.navigation.compose.hiltViewModel(LocalContext.current as androidx.activity.ComponentActivity)
 
             com.example.kiwi.presentation.screens.ChatScreen(
                 friendId = friendId,
                 friendName = friendName,
-                playerViewModel = playerViewModel,
+                playerViewModel = localPlayerViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }

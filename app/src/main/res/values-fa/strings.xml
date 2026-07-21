@@ -1,109 +1,146 @@
 <resources>
     <string name="app_name">کیوی موزیک</string>
 
-    <!-- Navigation Tabs -->
+    <!-- Navigation -->
     <string name="nav_home">خانه</string>
     <string name="nav_search">جستجو</string>
     <string name="nav_downloads">دانلودها</string>
-    <string name="nav_playlists">پلی‌لیست‌ها</string>
+    <string name="nav_playlists">لیست‌پخش‌ها</string>
     <string name="nav_profile">پروفایل</string>
 
-    <!-- Playlists Screen -->
-    <string name="title_your_playlists">پلی‌لیست‌های شما</string>
-    <string name="status_loading_playlists">در حال بارگذاری...</string>
-    <string name="content_desc_playlist_cover">کاور پلی‌لیست</string>
+    <!-- Auth Screen -->
+    <string name="welcome_back">خوش آمدید</string>
+    <string name="create_account">ایجاد حساب</string>
+    <string name="enter_details">برای ادامه اطلاعات خود را وارد کنید</string>
+    <string name="email">ایمیل</string>
+    <string name="password">رمز عبور</string>
+    <string name="username">نام کاربری</string>
+    <string name="log_in">ورود</string>
+    <string name="sign_up">ثبت نام</string>
+    <string name="no_account">حساب کاربری ندارید؟ ثبت نام</string>
+    <string name="have_account">قبلاً ثبت نام کرده‌اید؟ ورود</string>
+    <string name="error_invalid_email">لطفاً یک ایمیل معتبر وارد کنید</string>
+    <string name="error_invalid_password">رمز عبور باید حداقل ۶ کاراکتر باشد</string>
+    <string name="error_invalid_username">نام کاربری باید حداقل ۳ کاراکتر باشد</string>
 
-    <!-- Playlist Detail Screen -->
-    <string name="title_playlist_tracks">آهنگ‌های پلی‌لیست</string>
-    <string name="status_empty_playlist">هیچ آهنگی در این پلی‌لیست وجود ندارد.</string>
-    <string name="content_desc_go_back">بازگشت</string>
-
-    <!-- Profile Screen -->
-    <string name="content_desc_settings">تنظیمات</string>
-    <string name="content_desc_profile_picture">عکس پروفایل</string>
-    <string name="label_downloads">دانلودها</string>
-    <string name="label_following">دنبال‌شوندگان</string>
-    <string name="title_recent_activity">فعالیت‌های اخیر</string>
-
-    <!-- Profile Screen -->
-    <string name="profile_title">پروفایل من</string>
-    <string name="upgrade_premium">ارتقا به نسخه ویژه</string>
-    <string name="app_settings">تنظیمات برنامه</string>
-    <string name="change_language">تغییر زبان</string>
-    <string name="theme">پوسته</string>
-
-    <!-- Playlists Screen -->
-    <string name="playlists_title">لیست‌های پخش</string>
-    <string name="world_music">موسیقی جهان</string>
-    <string name="local_music">موسیقی محلی</string>
-    <string name="your_playlists">لیست‌های پخش شما</string>
-
-    <!-- Player -->
-    <string name="toast_saved_to_downloads">در دانلودها ذخیره شد!</string>
-    <string name="content_desc_save_download">ذخیره در دانلودها</string>
-
-    <!-- Top Bar -->
-    <string name="content_desc_app_logo">لوگوی برنامه</string>
-    <string name="content_desc_notifications">اعلان‌ها</string>
-
-    <!-- Mini Player -->
-    <string name="status_not_playing">در حال پخش نیست</string>
-    <string name="content_desc_play">پخش</string>
-    <string name="content_desc_pause">توقف</string>
-    <string name="content_desc_next">آهنگ بعدی</string>
-    <string name="content_desc_prev">آهنگ قبلی</string>
-    <string name="content_desc_expand_player">باز کردن پلیر</string>
-
-    <string name="content_desc_album_art">کاور آلبوم</string>
-
-    <!-- Home & Downloads Screens -->
-    <string name="title_offline_library">کتابخانه آفلاین</string>
-    <string name="status_no_downloads">هنوز آهنگی دانلود نشده است.</string>
-    <string name="title_featured_tracks">آهنگ‌های ویژه</string>
-
-    <!-- Player -->
-    <string name="content_desc_close_player">بستن پلیر</string>
-    <string name="content_desc_play_pause">پخش/توقف</string>
-
-    <!-- Search Screen -->
-    <string name="placeholder_search">جستجوی آهنگ یا هنرمند...</string>
-    <string name="content_desc_search_icon">آیکون جستجو</string>
-    <string name="status_no_results">هیچ نتیجه‌ای یافت نشد.</string>
-
-    <!-- Mock Profile Data -->
-    <string name="mock_profile_name">آرین</string>
-    <string name="mock_profile_role">مهندس نرم‌افزار</string>
-    <string name="mock_profile_activity">در یک پلی‌لیست با حسین همکاری کرد</string>
-
-    <!-- Settings Screen -->
-    <string name="title_settings">تنظیمات</string>
-    <string name="pref_language">زبان</string>
-    <string name="pref_dark_mode">حالت شب (Dark Mode)</string>
-    <string name="lang_english">انگلیسی (English)</string>
-    <string name="lang_persian">فارسی</string>
-
-    <!-- Home Screen -->
+    <!-- Profile & Settings -->
+    <string name="profile_title">پروفایل</string>
+    <string name="premium_member">کاربر ویژه</string>
     <string name="liked_songs">آهنگ‌های پسندیده</string>
+    <string name="following_top_artists">دنبال‌شوندگان و هنرمندان برتر</string>
+    <string name="find_friends">یافتن دوستان</string>
     <string name="recently_played">اخیراً پخش شده</string>
-    <string name="my_playlists_home">لیست‌های من</string>
-    <string name="top_artists">برترین هنرمندان</string>
+    <string name="my_playlists">لیست‌پخش‌های من</string>
+
+    <string name="app_settings">تنظیمات برنامه</string>
+    <string name="dark_mode">حالت تاریک</string>
+    <string name="language">زبان</string>
+    <string name="force_rtl">اجرای طرح راست‌چین (RTL)</string>
+    <string name="log_out">خروج از حساب</string>
+    <string name="english">انگلیسی (EN)</string>
+    <string name="persian">فارسی</string>
+
+    <!-- Generics & Placeholders -->
+    <string name="tracks_count">%1$d قطعه</string>
+    <string name="shuffle_play">پخش تصادفی</string>
+    <string name="unfollow">لغو دنبال کردن</string>
+
+    <string name="my_playlists_home">لیست‌پخش‌های من</string>
+    <string name="top_artists">هنرمندان برتر</string>
     <string name="most_popular">محبوب‌ترین‌ها</string>
     <string name="new_releases">جدیدترین‌ها</string>
+    <string name="empty_liked_songs_title">هنوز آهنگی نپسندیده‌اید.</string>
+    <string name="empty_liked_songs_desc">برای ذخیره، روی نماد قلب هر آهنگ ضربه بزنید.</string>
+    <string name="delete">حذف</string>
+    <string name="normal_user">کاربر عادی</string>
+    <string name="carousel_image">تصویر اسلایدر</string>
 
-    <!-- Search Screen -->
-    <string name="search_placeholder">به چه چیزی می‌خواهید گوش دهید؟</string>
+    <!-- Chat & Social -->
+    <string name="back">بازگشت</string>
+    <string name="downloaded_track">قطعه دانلود شده</string>
+    <string name="is_typing">%1$s در حال تایپ...</string>
+    <string name="share_song">اشتراک‌گذاری آهنگ</string>
+    <string name="message_hint">پیام...</string>
+    <string name="send">ارسال</string>
+    <string name="share_a_track">اشتراک‌گذاری یک قطعه</string>
+    <string name="select_downloaded_song">یک آهنگ دانلود شده برای ارسال انتخاب کنید</string>
+    <string name="no_downloaded_songs_share">هیچ آهنگ دانلودی برای اشتراک در دسترس نیست.</string>
+    <string name="cover">کاور</string>
+    <string name="tap_to_share">برای اشتراک‌گذاری ضربه بزنید</string>
+    <string name="following">دنبال‌شوندگان</string>
+    <string name="empty_following_title">شما کسی را دنبال نمی‌کنید.</string>
+    <string name="empty_following_desc">برای دنبال کردن دوستان و هنرمندان جستجو کنید.</string>
+    <string name="username_format">\@%1$s</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">دانلودها</string>
+    <string name="sort">مرتب‌سازی</string>
+    <string name="active">فعال</string>
+    <string name="sort_title_asc">عنوان (الف-ی)</string>
+    <string name="sort_artist_asc">هنرمند (الف-ی)</string>
+    <string name="sort_newest">جدیدترین</string>
+    <string name="no_downloaded_songs">هنوز هیچ آهنگی دانلود نشده است.</string>
+
+    <!-- Player, Inbox & Playlist Detail -->
+    <string name="close">بستن</string>
+    <string name="now_playing">در حال پخش</string>
+    <string name="more">بیشتر</string>
+    <string name="download">دانلود</string>
+    <string name="downloading_song">در حال دانلود %1$s…</string>
+    <string name="upgrade_premium_download">برای دانلود به حساب ویژه ارتقا دهید!</string>
+    <string name="upgrade_premium_download_offline">برای دانلود آفلاین آهنگ‌ها به حساب ویژه ارتقا دهید!</string>
+    <string name="cd_cover">کاور سی‌دی</string>
+    <string name="like_song">پسندیدن آهنگ</string>
+    <string name="previous">قبلی</string>
+    <string name="play_pause">پخش/توقف</string>
+    <string name="next">بعدی</string>
+    <string name="sleep_timer">تایمر خواب</string>
+    <string name="timer_15m">۱۵ دقیقه</string>
+    <string name="direct_messages">پیام‌های مستقیم</string>
+    <string name="tap_to_view_conversation">برای مشاهده گفتگو ضربه بزنید</string>
+    <!-- Playlist Details -->
+    <string name="content_desc_go_back">بازگشت</string>
+    <string name="title_playlist_tracks">قطعات لیست‌پخش</string>
+    <string name="status_empty_playlist">این لیست‌پخش خالی است.</string>
+
+    <!-- Playlists & Search -->
+    <string name="playlists_title">لیست‌پخش‌ها</string>
+    <string name="world_music">موسیقی جهان</string>
+    <string name="local_music">موسیقی محلی</string>
+    <string name="your_playlists">لیست‌پخش‌های شما</string>
+    <string name="search_placeholder">جستجو...</string>
     <string name="recent_searches">جستجوهای اخیر</string>
     <string name="no_results_found">نتیجه‌ای یافت نشد.</string>
     <string name="filter_all">همه</string>
     <string name="filter_songs">آهنگ‌ها</string>
     <string name="filter_artists">هنرمندان</string>
-    <string name="filter_playlists">پلی‌لیست‌ها</string>
+    <string name="filter_playlists">لیست‌پخش‌ها</string>
 
-    <!-- Downloads Screen -->
-    <string name="downloads_title">دانلودها</string>
-    <string name="no_downloaded_songs">هیچ آهنگی دانلود نشده است.</string>
-    <string name="sort_title_asc">عنوان (الف-ی)</string>
-    <string name="sort_artist_asc">هنرمند (الف-ی)</string>
-    <string name="sort_newest">جدیدترین‌ها</string>
+    <!-- Social Search & User Profile -->
+    <string name="search_for_users">جستجوی کاربران...</string>
+    <string name="search">جستجو</string>
+    <string name="profile_picture">عکس پروفایل</string>
+    <string name="followers_count_format">\@%1$s • %2$d دنبال‌کننده</string>
+    <string name="followers_count">%1$d دنبال‌کننده</string>
+    <string name="btn_following">دنبال شده</string>
+    <string name="btn_follow">دنبال کردن</string>
+    <string name="btn_message">پیام</string>
+    <string name="avatar">آواتار</string>
+    <string name="public_playlists">لیست‌پخش‌های عمومی</string>
+    <string name="no_public_playlists">لیست‌پخش عمومی در دسترس نیست.</string>
+    <string name="playlist_cover">کاور لیست‌پخش</string>
+    <string name="by_author">اثر %1$s</string>
 
+    <!-- Top Bar -->
+    <string name="content_desc_app_logo">لوگوی برنامه</string>
+    <string name="content_desc_settings">تنظیمات</string>
+    <string name="content_desc_direct_messages">پیام‌های مستقیم</string>
+    <string name="content_desc_profile_picture">عکس پروفایل</string>
+
+    <string name="filter_users">کاربران</string>
+
+    <string name="upgrade_to_premium">ارتقا به حساب ویژه</string>
+    <string name="upgrading">در حال ارتقا...</string>
+    <string name="coming_soon">به زودی!</string>
+    <string name="verified_premium">کاربر ویژه تایید شده</string>
 </resources>

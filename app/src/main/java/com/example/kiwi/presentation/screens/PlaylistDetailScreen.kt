@@ -37,7 +37,6 @@ fun PlaylistDetailScreen(
     val dimens = LocalDimens.current
     val context = LocalContext.current
 
-    // Toggle this to test both standard and premium barriers
     val isPremiumUser by playerViewModel.isPremium.collectAsState()
 
     Column(
@@ -92,7 +91,7 @@ fun PlaylistDetailScreen(
                                 },
                                 onDownloadClick = { clickedSong ->
                                     if (isPremiumUser) {
-                                        val workData = androidx.work.Data.Builder()
+                                        val workData = Data.Builder()
                                             .putString("SONG_ID", clickedSong.id)
                                             .putString("AUDIO_URL", clickedSong.audioUrl)
                                             .putString("SONG_TITLE", clickedSong.title)
@@ -105,9 +104,17 @@ fun PlaylistDetailScreen(
                                             .build()
 
                                         WorkManager.getInstance(context).enqueue(downloadRequest)
-                                        Toast.makeText(context, "Downloading ${clickedSong.title}...", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.downloading_song, clickedSong.title),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     } else {
-                                        Toast.makeText(context, "Upgrade to Premium to download songs offline!", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.upgrade_premium_download_offline),
+                                            Toast.LENGTH_LONG
+                                        ).show()
                                     }
                                 }
                             )

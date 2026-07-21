@@ -10,12 +10,12 @@ import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.SongRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@OptIn(FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val repository: SongRepository,
@@ -25,21 +25,19 @@ class SearchViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val _effect = Channel<SearchEffect>()
-    val effect = _effect.receiveAsFlow()
-
     // Expose recent history directly from Room
     val recentSearches = searchHistoryDao.getRecentSearches()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    private val queryFlow = MutableStateFlow("")
-
-    val pagedSearchResults: Flow<PagingData<Song>> = queryFlow
-        .debounce(500L) // Debounce operator
+    // Observe BOTH query and currentFilter dynamically
+    val pagedSearchResults: Flow<PagingData<Song>> = _uiState
+        .map { Pair(it.query, it.currentFilter) } // Trigger search when either changes
+        .debounce(500L) // Wait 500ms after user stops typing/clicking
         .distinctUntilChanged()
-        .flatMapLatest { query ->
+        .flatMapLatest { (query, filter) ->
             if (query.isNotBlank()) {
-                repository.getPagedSearchSongs(query)
+                // Pass both variables to your repository
+                repository.getPagedSearchSongs(query, filter)
             } else {
                 flowOf(PagingData.empty())
             }
@@ -50,19 +48,16 @@ class SearchViewModel @Inject constructor(
         when (intent) {
             is SearchIntent.UpdateQuery -> {
                 _uiState.update { it.copy(query = intent.query) }
-                queryFlow.value = intent.query
             }
             is SearchIntent.UpdateFilter -> {
                 _uiState.update { it.copy(currentFilter = intent.filter) }
             }
             is SearchIntent.DeleteHistoryItem -> {
-                // FIXED: Extract the .query string from the entity
                 viewModelScope.launch { searchHistoryDao.deleteSearchQuery(intent.item.query) }
             }
             is SearchIntent.SaveQuery -> {
                 if (intent.query.isNotBlank()) {
                     viewModelScope.launch {
-                        // FIXED: Uses the correct insert method and provides the timestamp
                         searchHistoryDao.insertSearchQuery(
                             SearchHistoryEntity(
                                 query = intent.query.trim(),

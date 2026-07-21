@@ -23,7 +23,7 @@ interface SongRepository {
 
     fun getPagedFeaturedSongs(): Flow<PagingData<Song>>
 
-    fun getPagedSearchSongs(query: String): Flow<PagingData<Song>>
+    fun getPagedSearchSongs(query: String, filter: String): Flow<PagingData<Song>>
 
     fun getPagedPlaylists(): Flow<PagingData<Playlist>>
     fun getPagedPlaylistSongs(playlistId: String): Flow<PagingData<Song>>

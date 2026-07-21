@@ -5,24 +5,27 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.kiwi.R
 import com.example.kiwi.presentation.theme.LocalDimens
-import androidx.compose.material.icons.filled.Chat
-import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KiwiTopBar(
+    profilePicUri: String?, // <-- NEW PARAMETER
     onSettingsClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onChatClick: () -> Unit
@@ -58,21 +61,35 @@ fun KiwiTopBar(
             }
             IconButton(onClick = onChatClick) {
                 Icon(
-                    imageVector = Icons.Default.Chat, // Replaces the Bell icon
-                    contentDescription = "Direct Messages",
+                    imageVector = Icons.Default.Chat,
+                    contentDescription = stringResource(id = R.string.content_desc_direct_messages),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
-            // Real Profile Image using Coil
             IconButton(onClick = onProfileClick) {
-                AsyncImage(
-                    model = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop",
-                    contentDescription = "Profile Picture",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(dimens.large)
-                        .clip(CircleShape)
-                )
+                if (profilePicUri.isNullOrEmpty()) {
+                    Surface(
+                        modifier = Modifier.size(dimens.large),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = stringResource(id = R.string.content_desc_profile_picture),
+                            modifier = Modifier.padding(4.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        model = profilePicUri,
+                        contentDescription = stringResource(id = R.string.content_desc_profile_picture),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(dimens.large)
+                            .clip(CircleShape)
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
