@@ -143,4 +143,7 @@
     <string name="upgrading">در حال ارتقا...</string>
     <string name="coming_soon">به زودی!</string>
     <string name="verified_premium">کاربر ویژه تایید شده</string>
+
+
+    <string name="cancel_premium">لغو اشتراک ویژه</string>
 </resources>

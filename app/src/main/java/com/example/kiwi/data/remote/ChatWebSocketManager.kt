@@ -21,7 +21,7 @@ class ChatWebSocketManager @Inject constructor(
     private var webSocket: WebSocket? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    // Connects to your local backend (e.g. C# ASP.NET Core or Python running on your PC)
+    // Connects to your local backend (Python running on your PC)
     // 10.0.2.2 is the Android emulator's alias for your computer's localhost.
     private val WEBSOCKET_URL = "ws://192.168.1.3:8080/chat"
 

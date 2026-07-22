@@ -97,22 +97,19 @@ fun SettingsScreen(
                 }
             }
 
-            HorizontalDivider()
-
-            // RTL Layout Toggle
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = stringResource(id = R.string.force_rtl), style = MaterialTheme.typography.titleMedium)
-                Switch(
-                    checked = settings.language == "fa",
-                    onCheckedChange = { isRtl ->
-                        val newLang = if (isRtl) "fa" else "en"
-                        viewModel.setLanguage(newLang)
-                    }
-                )
+            // Unsubscribe Premium Button (Only visible if Premium)
+            if (settings.isPremium) {
+                HorizontalDivider()
+                Button(
+                    onClick = { viewModel.cancelPremium() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                ) {
+                    Text(stringResource(id = R.string.cancel_premium))
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))

@@ -51,7 +51,19 @@ fun ProfileScreen(
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { viewModel.updateProfilePicture(it.toString()) }
+        uri?.let {
+            // 1. Take persistable permission so the URI survives app restarts
+            val flag = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+            try {
+                context.contentResolver.takePersistableUriPermission(it, flag)
+            } catch (e: Exception) {
+                // If it fails (some custom galleries don't support this), it will just fallback to temporary
+                e.printStackTrace()
+            }
+
+            // 2. Save to DataStore
+            viewModel.updateProfilePicture(it.toString())
+        }
     }
 
     // Removed the Scaffold completely to fix the layout gap and remove the duplicate TopBar

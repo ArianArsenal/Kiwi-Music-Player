@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -35,7 +36,8 @@ import com.example.kiwi.presentation.viewmodel.LikedSongsViewModel
 @Composable
 fun LikedSongsScreen(
     viewModel: LikedSongsViewModel = hiltViewModel(),
-    onPlayAll: (List<Song>, Int) -> Unit
+    onPlayAll: (List<Song>, Int) -> Unit,
+    onBackClick: () -> Unit // Added back click parameter
 ) {
     val likedSongs by viewModel.likedSongs.collectAsState()
 
@@ -52,6 +54,20 @@ fun LikedSongsScreen(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.BottomStart
             ) {
+                // Added Back Button inside the custom header
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(top = 16.dp, start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = stringResource(id = R.string.back),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

@@ -59,6 +59,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun cancelPremium() {
+        viewModelScope.launch {
+            userPreferencesRepository.setPremiumStatus(false)
+        }
+    }
+
     // Add this function inside your SettingsViewModel
     fun logOutUser() {
         viewModelScope.launch {

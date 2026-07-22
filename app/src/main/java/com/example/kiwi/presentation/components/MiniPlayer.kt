@@ -80,19 +80,19 @@ fun MiniPlayer(
                     )
                 }
 
+                IconButton(onClick = onPreviousClick) {
+                    Icon(
+                        imageVector = Icons.Default.SkipPrevious,
+                        contentDescription = "Previous",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
                 // Controls
                 IconButton(onClick = onPlayPauseClick) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = "Play/Pause",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                IconButton(onClick = onPreviousClick) {
-                    Icon(
-                        imageVector = Icons.Default.SkipPrevious,
-                        contentDescription = "Previous",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }

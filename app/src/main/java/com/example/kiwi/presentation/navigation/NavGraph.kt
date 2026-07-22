@@ -112,7 +112,8 @@ fun KiwiNavGraph(
                     playerViewModel.processIntent(
                         com.example.kiwi.presentation.viewmodel.PlayerIntent.PlaySongList(songs, startIndex)
                     )
-                }
+                },
+                onBackClick = { navController.popBackStack() } // <-- ADDED THIS LINE
             )
         }
 
