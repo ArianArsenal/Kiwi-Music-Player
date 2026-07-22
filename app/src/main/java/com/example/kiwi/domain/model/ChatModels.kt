@@ -9,7 +9,11 @@ data class ChatMessage(
     val text: String,
     val timestamp: Long,
     val status: MessageStatus,
-    val sharedSongId: String? = null // Null for normal texts, holds an ID if a song is shared
+    val sharedSongId: String? = null, // Null for normal texts, holds an ID if a song is shared
+    val sharedSongTitle: String? = null,
+    val sharedSongArtist: String? = null,
+    val sharedSongCoverUrl: String? = null,
+    val sharedSongAudioUrl: String? = null
 )
 
 // The sealed class that will handle our real-time WebSocket payloads

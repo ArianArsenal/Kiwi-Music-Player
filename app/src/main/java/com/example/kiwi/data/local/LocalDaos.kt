@@ -8,42 +8,42 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SearchHistoryDao {
-    @Query("SELECT * FROM search_history ORDER BY timestamp DESC LIMIT 10")
-    fun getRecentSearches(): Flow<List<SearchHistoryEntity>>
+    @Query("SELECT * FROM search_history WHERE accountId = :accountId ORDER BY timestamp DESC LIMIT 10")
+    fun getRecentSearches(accountId: String): Flow<List<SearchHistoryEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSearchQuery(searchQuery: SearchHistoryEntity)
 
-    @Query("DELETE FROM search_history")
-    suspend fun clearHistory()
+    @Query("DELETE FROM search_history WHERE accountId = :accountId")
+    suspend fun clearHistory(accountId: String)
 
-    @Query("DELETE FROM search_history WHERE `query` = :searchQuery")
-    suspend fun deleteSearchQuery(searchQuery: String)
+    @Query("DELETE FROM search_history WHERE `query` = :searchQuery AND accountId = :accountId")
+    suspend fun deleteSearchQuery(searchQuery: String, accountId: String)
 }
 
 @Dao
 interface LikedSongsDao {
-    @Query("SELECT * FROM liked_songs ORDER BY timestamp DESC")
-    fun getAllLikedSongs(): Flow<List<LikedSongEntity>>
+    @Query("SELECT * FROM liked_songs WHERE accountId = :accountId ORDER BY timestamp DESC")
+    fun getAllLikedSongs(accountId: String): Flow<List<LikedSongEntity>>
 
-    @Query("SELECT EXISTS(SELECT 1 FROM liked_songs WHERE songId = :songId)")
-    fun isSongLiked(songId: String): Flow<Boolean>
+    @Query("SELECT EXISTS(SELECT 1 FROM liked_songs WHERE songId = :songId AND accountId = :accountId)")
+    fun isSongLiked(songId: String, accountId: String): Flow<Boolean>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun likeSong(song: LikedSongEntity)
 
-    @Query("DELETE FROM liked_songs WHERE songId = :songId")
-    suspend fun unlikeSong(songId: String)
+    @Query("DELETE FROM liked_songs WHERE songId = :songId AND accountId = :accountId")
+    suspend fun unlikeSong(songId: String, accountId: String)
 }
 
 @Dao
 interface DownloadedFilesDao {
-    @Query("SELECT * FROM downloaded_files ORDER BY downloadedAt DESC")
-    fun getAllDownloadedFiles(): Flow<List<DownloadedFileEntity>>
+    @Query("SELECT * FROM downloaded_files WHERE accountId = :accountId ORDER BY downloadedAt DESC")
+    fun getAllDownloadedFiles(accountId: String): Flow<List<DownloadedFileEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveDownloadedFile(file: DownloadedFileEntity)
 
-    @Query("DELETE FROM downloaded_files WHERE songId = :songId")
-    suspend fun removeDownloadedFile(songId: String)
+    @Query("DELETE FROM downloaded_files WHERE songId = :songId AND accountId = :accountId")
+    suspend fun removeDownloadedFile(songId: String, accountId: String)
 }

@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,19 +20,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.kiwi.R
 import com.example.kiwi.presentation.theme.LocalDimens
+import com.example.kiwi.presentation.viewmodel.TopBarViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KiwiTopBar(
-    profilePicUri: String?, // <-- NEW PARAMETER
+    profilePicUri: String?,
     onSettingsClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    onChatClick: () -> Unit
+    onChatClick: () -> Unit,
+    viewModel: TopBarViewModel = hiltViewModel() // <-- INJECT VIEWMODEL
 ) {
     val dimens = LocalDimens.current
+    val unreadCount by viewModel.totalUnreadCount.collectAsState()
 
     TopAppBar(
         title = {
@@ -60,11 +66,25 @@ fun KiwiTopBar(
                 )
             }
             IconButton(onClick = onChatClick) {
-                Icon(
-                    imageVector = Icons.Default.Chat,
-                    contentDescription = stringResource(id = R.string.content_desc_direct_messages),
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
+                // NEW: BadgedBox for the red unread dot
+                BadgedBox(
+                    badge = {
+                        if (unreadCount > 0) {
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            ) {
+                                Text(unreadCount.toString())
+                            }
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Chat,
+                        contentDescription = stringResource(id = R.string.content_desc_direct_messages),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
             IconButton(onClick = onProfileClick) {
                 if (profilePicUri.isNullOrEmpty()) {

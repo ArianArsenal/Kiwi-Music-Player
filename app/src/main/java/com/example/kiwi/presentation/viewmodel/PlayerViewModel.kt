@@ -44,7 +44,6 @@ class PlayerViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState = _uiState.asStateFlow()
 
-    // UPDATED: Sync premium status dynamically from DataStore
     val isPremium: StateFlow<Boolean> = userPreferencesRepository.userSettingsFlow
         .map { it.isPremium }
         .stateIn(
@@ -53,17 +52,29 @@ class PlayerViewModel @Inject constructor(
             initialValue = false
         )
 
+    // Extracted current user ID to track likes
+    val currentUserId: StateFlow<String> = userPreferencesRepository.userSettingsFlow
+        .map { it.username ?: "" }
+        .stateIn(viewModelScope, SharingStarted.Lazily, "")
+
     private var currentPlaylist: List<Song> = emptyList()
 
     private var mediaControllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
-
-    // Job to track the current song's like status
     private var observeLikeStatusJob: Job? = null
 
     init {
         initializeController()
         startProgressUpdater()
+
+        viewModelScope.launch {
+            currentUserId.collect { uid ->
+                if (uid.isBlank()) {
+                    mediaController?.pause()
+                    _uiState.update { it.copy(currentSong = null, isPlaying = false) }
+                }
+            }
+        }
     }
 
     private fun initializeController() {
@@ -73,15 +84,17 @@ class PlayerViewModel @Inject constructor(
         mediaControllerFuture?.addListener({
             mediaController = mediaControllerFuture?.get()
             setupPlayerListener()
-        }, ContextCompat.getMainExecutor(context)) // Runs on the main thread
+        }, ContextCompat.getMainExecutor(context))
     }
 
-    // Function to observe the DB for the current song
     private fun checkIfCurrentSongIsLiked(songId: String) {
         observeLikeStatusJob?.cancel()
         observeLikeStatusJob = viewModelScope.launch {
-            likedSongsRepository.isSongLiked(songId).collect { isLiked ->
-                _uiState.update { it.copy(isCurrentSongLiked = isLiked) }
+            val uid = currentUserId.value
+            if (uid.isNotBlank()) {
+                likedSongsRepository.isSongLiked(songId, uid).collect { isLiked ->
+                    _uiState.update { it.copy(isCurrentSongLiked = isLiked) }
+                }
             }
         }
     }
@@ -93,27 +106,33 @@ class PlayerViewModel @Inject constructor(
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                // Find the original song object that contains the real audioUrl!
                 val songId = mediaItem?.mediaId
                 val originalSong = currentPlaylist.find { it.id == songId }
 
                 if (originalSong != null) {
                     _uiState.update { it.copy(currentSong = originalSong) }
-                    // Trigger DB check when a new song starts
                     checkIfCurrentSongIsLiked(originalSong.id)
                 }
             }
         })
     }
 
-    // Coroutine to smoothly update the progress bar while playing
     private fun startProgressUpdater() {
         viewModelScope.launch {
             while (isActive) {
                 mediaController?.let { player ->
-                    if (player.isPlaying && player.duration > 0) {
-                        val progress = player.currentPosition.toFloat() / player.duration.toFloat()
-                        _uiState.update { it.copy(progress = progress) }
+                    // Remove the isPlaying check so the slider updates even when paused
+                    if (player.duration > 0) {
+                        val currentPosition = player.currentPosition
+                        val duration = player.duration
+                        val progress = currentPosition.toFloat() / duration.toFloat()
+                        _uiState.update {
+                            it.copy(
+                                progress = progress,
+                                currentPositionMs = currentPosition,
+                                durationMs = duration
+                            )
+                        }
                     }
                 }
                 delay(500L)
@@ -122,11 +141,9 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun playSongList(songs: List<Song>, startIndex: Int) {
-        // Sanitize data payload: Map original song collections to direct local files if cached
         val localizedSongs = songs.map { song ->
             val localFile = File(context.filesDir, "${song.id}.mp3")
             if (localFile.exists()) {
-                // Re-point the internal domain object mapping direct to local disk path URI strings
                 song.copy(audioUrl = Uri.fromFile(localFile).toString())
             } else {
                 song
@@ -144,7 +161,7 @@ class PlayerViewModel @Inject constructor(
 
             MediaItem.Builder()
                 .setMediaId(song.id)
-                .setUri(Uri.parse(song.audioUrl)) // Safely parses local file paths or web links
+                .setUri(Uri.parse(song.audioUrl))
                 .setMediaMetadata(metadata)
                 .build()
         }
@@ -174,17 +191,31 @@ class PlayerViewModel @Inject constructor(
             is PlayerIntent.SetSleepTimer -> startSleepTimer(intent.minutes)
             is PlayerIntent.UpdateDominantColor -> _uiState.update { it.copy(dominantColor = intent.color) }
 
-            // Handle the Like Button Click
+            is PlayerIntent.SeekToFraction -> {
+                mediaController?.let { player ->
+                    val newPosition = (player.duration * intent.fraction).toLong()
+                    player.seekTo(newPosition)
+                    _uiState.update {
+                        it.copy(
+                            progress = intent.fraction,
+                            currentPositionMs = newPosition
+                        )
+                    }
+                }
+            }
+
             is PlayerIntent.ToggleLikeCurrentSong -> {
                 val currentSong = _uiState.value.currentSong
-                if (currentSong != null) {
+                val uid = currentUserId.value
+                if (currentSong != null && uid.isNotBlank()) {
                     viewModelScope.launch {
                         likedSongsRepository.toggleLikeState(
                             songId = currentSong.id,
                             title = currentSong.title,
                             artistName = currentSong.artistName,
                             coverImageUrl = currentSong.coverImageUrl,
-                            isCurrentlyLiked = _uiState.value.isCurrentSongLiked
+                            isCurrentlyLiked = _uiState.value.isCurrentSongLiked,
+                            accountId = uid // Added active user ID
                         )
                     }
                 }
@@ -198,11 +229,10 @@ class PlayerViewModel @Inject constructor(
     }
 
     private fun startSleepTimer(minutes: Int) {
-        // Cancel any existing timer before starting a new one
         sleepTimerJob?.cancel()
         if (minutes > 0) {
             sleepTimerJob = viewModelScope.launch {
-                delay(minutes * 60 * 1000L) // Convert minutes to milliseconds
+                delay(minutes * 60 * 1000L)
                 mediaController?.pause()
             }
         }

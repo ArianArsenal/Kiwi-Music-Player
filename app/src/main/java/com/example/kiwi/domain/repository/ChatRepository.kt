@@ -14,20 +14,26 @@ import javax.inject.Singleton
 class ChatRepository @Inject constructor(
     private val chatDao: ChatDao
 ) {
-    // 1. UI observes this Flow. If the internet drops, the UI still shows the cached history.
-    fun getMessagesWithUser(userId: String): Flow<List<ChatMessage>> {
-        return chatDao.getChatHistoryWithUser(userId).map { entities ->
+    // UI observes this Flow. Requires both the active user and the friend.
+    fun getMessagesWithUser(currentUserId: String, friendId: String): Flow<List<ChatMessage>> {
+        return chatDao.getChatHistoryWithUser(currentUserId, friendId).map { entities ->
             entities.map { it.toDomain() }
         }
     }
 
-    // 2. Used when you hit 'Send', or when the WebSocket receives a message.
     suspend fun saveMessage(message: ChatMessage) {
         chatDao.insertMessage(message.toEntity())
     }
 
-    // 3. Used when the WebSocket fires a MessageReceipt event (e.g., the double blue tick)
     suspend fun updateMessageStatus(messageId: String, status: MessageStatus) {
         chatDao.updateMessageStatus(messageId, status.name)
+    }
+
+    suspend fun markMessagesAsRead(currentUserId: String, friendId: String) {
+        chatDao.markMessagesAsRead(currentUserId, friendId)
+    }
+
+    fun getTotalUnreadCount(currentUserId: String): Flow<Int> {
+        return chatDao.getTotalUnreadCount(currentUserId)
     }
 }

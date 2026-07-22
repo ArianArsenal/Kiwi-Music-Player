@@ -16,16 +16,15 @@ import javax.inject.Singleton
 @Singleton
 class ChatWebSocketManager @Inject constructor(
     private val chatRepository: ChatRepository,
-    private val okHttpClient: OkHttpClient // Injected from NetworkModule
+    private val okHttpClient: OkHttpClient
 ) {
     private var webSocket: WebSocket? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    // Connects to your local backend (Python running on your PC)
-    // 10.0.2.2 is the Android emulator's alias for your computer's localhost.
+    // TODO: In the future, read this from UserPreferencesRepository so you can change it
+    // dynamically from the Settings screen without rebuilding the app!
     private val WEBSOCKET_URL = "ws://192.168.1.3:8080/chat"
 
-    // Callback to push live typing data to the ViewModel
     var onTypingStatusChange: ((Boolean) -> Unit)? = null
 
     fun connect(userId: String) {
@@ -33,7 +32,6 @@ class ChatWebSocketManager @Inject constructor(
             .url("$WEBSOCKET_URL?userId=$userId")
             .build()
 
-        // Opens the persistent Real-time data stream
         webSocket = okHttpClient.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 Log.d("KiwiWS", "WebSocket Connected")
@@ -60,28 +58,32 @@ class ChatWebSocketManager @Inject constructor(
             val json = JSONObject(jsonText)
             when (json.getString("type")) {
                 "new_message" -> {
-                    // 1. Receive message from network
+                    // 1. Receive message from network and extract embedded song data
                     val message = ChatMessage(
                         id = json.getString("id"),
                         senderId = json.getString("senderId"),
                         receiverId = json.getString("receiverId"),
                         text = json.getString("text"),
                         timestamp = json.getLong("timestamp"),
-                        status = MessageStatus.SENT, // Arrived successfully
-                        sharedSongId = if (json.has("sharedSongId")) json.getString("sharedSongId") else null
+                        status = MessageStatus.SENT,
+
+                        // NEW: Extract all song metadata so the receiver sees it immediately
+                        sharedSongId = if (json.has("sharedSongId")) json.getString("sharedSongId") else null,
+                        sharedSongTitle = if (json.has("sharedSongTitle")) json.getString("sharedSongTitle") else null,
+                        sharedSongArtist = if (json.has("sharedSongArtist")) json.getString("sharedSongArtist") else null,
+                        sharedSongCoverUrl = if (json.has("sharedSongCoverUrl")) json.getString("sharedSongCoverUrl") else null,
+                        sharedSongAudioUrl = if (json.has("sharedSongAudioUrl")) json.getString("sharedSongAudioUrl") else null
                     )
 
-                    // 2. Save to Room database (satisfies Offline Management)
+                    // 2. Save to Room database
                     chatRepository.saveMessage(message)
 
                     // 3. Immediately fire back a read receipt over the stream
                     sendReadReceipt(message.id, message.senderId)
                 }
                 "receipt" -> {
-                    // Upgrades the status from SENDING -> SENT -> READ based on server confirmation
                     val messageId = json.getString("messageId")
-                    val newStatus = MessageStatus.valueOf(json.getString("status")) // e.g., "READ"
-
+                    val newStatus = MessageStatus.valueOf(json.getString("status"))
                     chatRepository.updateMessageStatus(messageId, newStatus)
                 }
                 "typing" -> {
@@ -96,10 +98,6 @@ class ChatWebSocketManager @Inject constructor(
 
     fun sendMessage(message: ChatMessage) {
         scope.launch {
-            // 1. Save locally as SENDING first (Clock Icon)
-            chatRepository.saveMessage(message.copy(status = MessageStatus.SENDING))
-
-            // 2. Format payload
             val json = JSONObject().apply {
                 put("type", "chat_message")
                 put("id", message.id)
@@ -107,10 +105,15 @@ class ChatWebSocketManager @Inject constructor(
                 put("receiverId", message.receiverId)
                 put("text", message.text)
                 put("timestamp", message.timestamp)
+
+                // NEW: Push the embedded song data to the JSON payload
                 message.sharedSongId?.let { put("sharedSongId", it) }
+                message.sharedSongTitle?.let { put("sharedSongTitle", it) }
+                message.sharedSongArtist?.let { put("sharedSongArtist", it) }
+                message.sharedSongCoverUrl?.let { put("sharedSongCoverUrl", it) }
+                message.sharedSongAudioUrl?.let { put("sharedSongAudioUrl", it) }
             }
 
-            // 3. Push to stream
             val isPushed = webSocket?.send(json.toString()) == true
 
             if (!isPushed) {
@@ -121,16 +124,16 @@ class ChatWebSocketManager @Inject constructor(
 
     private fun sendReadReceipt(messageId: String, senderId: String) {
         val json = JSONObject().apply {
-            put("type", "read_receipt")
+            put("type", "receipt") // Changed to match Python bot expectation
             put("messageId", messageId)
-            put("senderId", senderId) // The person who sent the message to you
+            put("status", "READ")
         }
         webSocket?.send(json.toString())
     }
 
     fun sendTypingStatus(senderId: String, receiverId: String, isTyping: Boolean) {
         val json = JSONObject().apply {
-            put("type", "typing_status")
+            put("type", "typing") // Changed to match Python bot expectation
             put("senderId", senderId)
             put("receiverId", receiverId)
             put("isTyping", isTyping)

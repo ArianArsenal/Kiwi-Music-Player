@@ -12,7 +12,8 @@ import androidx.room.RoomDatabase
         ChatMessageEntity::class,
         SearchHistoryEntity::class,
         LikedSongEntity::class,
-        DownloadedFileEntity::class
+        DownloadedFileEntity::class,
+        UserEntity::class
     ],
     version = 3,
     exportSchema = false
@@ -27,4 +28,6 @@ abstract class KiwiDatabase : RoomDatabase() {
     abstract fun searchHistoryDao(): SearchHistoryDao
     abstract fun likedSongsDao(): LikedSongsDao
     abstract fun downloadedFilesDao(): DownloadedFilesDao
+
+    abstract val userDao: UserDao
 }

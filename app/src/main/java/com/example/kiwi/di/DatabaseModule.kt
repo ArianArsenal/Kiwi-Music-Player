@@ -8,6 +8,7 @@ import com.example.kiwi.data.local.KiwiDatabase
 import com.example.kiwi.data.local.LikedSongsDao
 import com.example.kiwi.data.local.SongDao
 import com.example.kiwi.data.local.SearchHistoryDao // FIXED: Corrected import path
+import com.example.kiwi.data.local.UserDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -57,5 +58,11 @@ object DatabaseModule {
     @Singleton
     fun provideChatDao(database: KiwiDatabase): ChatDao {
         return database.chatDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserDao(database: KiwiDatabase): UserDao {
+        return database.userDao
     }
 }

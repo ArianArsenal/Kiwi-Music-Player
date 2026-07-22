@@ -5,90 +5,133 @@ import androidx.lifecycle.viewModelScope
 import com.example.kiwi.data.remote.ChatWebSocketManager
 import com.example.kiwi.domain.model.ChatMessage
 import com.example.kiwi.domain.model.MessageStatus
+import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.ChatRepository
+import com.example.kiwi.domain.repository.SongRepository
+import com.example.kiwi.domain.repository.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
-    private val webSocketManager: ChatWebSocketManager
+    private val songRepository: SongRepository, // <-- INJECT SONG REPOSITORY
+    private val webSocketManager: ChatWebSocketManager,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
-    val currentUserId = "user_arian"
+    val currentUserId: StateFlow<String> = userPreferencesRepository.userSettingsFlow
+        .map { it.username ?: "" }
+        .stateIn(viewModelScope, SharingStarted.Lazily, "")
 
-    // 1. Make the friend ID a StateFlow so Room reacts when it changes
     private val currentFriendId = MutableStateFlow("")
 
-    // 2. Use flatMapLatest to dynamically swap the Room query when you open a new chat
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val messages = currentFriendId.flatMapLatest { friendId ->
-        if (friendId.isBlank()) {
+    val messages = combine(currentUserId, currentFriendId) { uid, fid ->
+        Pair(uid, fid)
+    }.flatMapLatest { (uid, fid) ->
+        if (uid.isBlank() || fid.isBlank()) {
             flowOf(emptyList())
         } else {
-            // Uses the correct repository method
-            chatRepository.getMessagesWithUser(friendId)
+            chatRepository.getMessagesWithUser(currentUserId = uid, friendId = fid)
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val inputText = MutableStateFlow("")
     val isFriendTyping = MutableStateFlow(false)
 
+    // NEW: Real-time global song search for the bottom sheet
+    private val _songSearchQuery = MutableStateFlow("")
+    val songSearchQuery = _songSearchQuery.asStateFlow()
+
+    val songSearchResults: StateFlow<List<Song>> = _songSearchQuery
+        .debounce(300L)
+        .flatMapLatest { query ->
+            if (query.isBlank()) {
+                songRepository.getFeaturedSongs() // Show featured songs by default
+            } else {
+                songRepository.searchSongs(query)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun updateSongSearchQuery(query: String) {
+        _songSearchQuery.value = query
+    }
+
     fun setChatPartner(friendId: String) {
         currentFriendId.value = friendId
     }
 
     init {
-        webSocketManager.connect(currentUserId)
+        viewModelScope.launch {
+            currentUserId.collect { userId ->
+                if (userId.isNotBlank()) {
+                    webSocketManager.connect(userId)
+                }
+            }
+        }
 
         webSocketManager.onTypingStatusChange = { isFriendTypingNow ->
             isFriendTyping.value = isFriendTypingNow
+        }
+
+        viewModelScope.launch {
+            combine(currentUserId, currentFriendId) { uid, fid -> Pair(uid, fid) }
+                .collect { (uid, fid) ->
+                    if (uid.isNotBlank() && fid.isNotBlank()) {
+                        chatRepository.markMessagesAsRead(currentUserId = uid, friendId = fid)
+                    }
+                }
         }
     }
 
     fun updateInputText(text: String) {
         inputText.value = text
-        if (currentFriendId.value.isNotBlank()) {
-            webSocketManager.sendTypingStatus(currentUserId, currentFriendId.value, text.isNotEmpty())
+        if (currentFriendId.value.isNotBlank() && currentUserId.value.isNotBlank()) {
+            webSocketManager.sendTypingStatus(currentUserId.value, currentFriendId.value, text.isNotEmpty())
         }
     }
 
     fun sendMessage() {
         val text = inputText.value.trim()
-        if (text.isNotBlank() && currentFriendId.value.isNotBlank()) {
+        if (text.isNotBlank() && currentFriendId.value.isNotBlank() && currentUserId.value.isNotBlank()) {
             val message = ChatMessage(
                 id = UUID.randomUUID().toString(),
-                senderId = currentUserId,
+                senderId = currentUserId.value,
                 receiverId = currentFriendId.value,
                 text = text,
                 timestamp = System.currentTimeMillis(),
-                status = MessageStatus.SENDING,
+                status = MessageStatus.SENT,
                 sharedSongId = null
             )
             webSocketManager.sendMessage(message)
+            viewModelScope.launch { chatRepository.saveMessage(message) }
             inputText.value = ""
         }
     }
 
-    fun shareSong(songId: String) {
-        if (currentFriendId.value.isNotBlank()) {
+    fun shareSong(song: Song) {
+        if (currentFriendId.value.isNotBlank() && currentUserId.value.isNotBlank()) {
             val message = ChatMessage(
                 id = UUID.randomUUID().toString(),
-                senderId = currentUserId,
+                senderId = currentUserId.value,
                 receiverId = currentFriendId.value,
                 text = "Check out this song!",
                 timestamp = System.currentTimeMillis(),
-                status = MessageStatus.SENDING,
-                sharedSongId = songId
+                status = MessageStatus.SENT,
+                sharedSongId = song.id,
+                sharedSongTitle = song.title,
+                sharedSongArtist = song.artistName,
+                sharedSongCoverUrl = song.coverImageUrl,
+                sharedSongAudioUrl = song.audioUrl
             )
+            viewModelScope.launch { chatRepository.saveMessage(message) }
             webSocketManager.sendMessage(message)
         }
     }

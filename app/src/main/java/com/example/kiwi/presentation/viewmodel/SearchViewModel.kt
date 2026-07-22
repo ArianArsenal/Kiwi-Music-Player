@@ -8,6 +8,7 @@ import com.example.kiwi.data.local.SearchHistoryDao
 import com.example.kiwi.data.local.SearchHistoryEntity
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.SongRepository
+import com.example.kiwi.domain.repository.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -19,24 +20,32 @@ import javax.inject.Inject
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val repository: SongRepository,
-    private val searchHistoryDao: SearchHistoryDao
+    private val searchHistoryDao: SearchHistoryDao,
+    private val userPreferencesRepository: UserPreferencesRepository // INJECTED
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState = _uiState.asStateFlow()
 
-    // Expose recent history directly from Room
-    val recentSearches = searchHistoryDao.getRecentSearches()
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    private val currentUserId: StateFlow<String> = userPreferencesRepository.userSettingsFlow
+        .map { it.username ?: "" }
+        .stateIn(viewModelScope, SharingStarted.Lazily, "")
 
-    // Observe BOTH query and currentFilter dynamically
+    // Observe active user and update history accordingly
+    val recentSearches = currentUserId.flatMapLatest { uid ->
+        if (uid.isBlank()) {
+            flowOf(emptyList())
+        } else {
+            searchHistoryDao.getRecentSearches(uid)
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     val pagedSearchResults: Flow<PagingData<Song>> = _uiState
-        .map { Pair(it.query, it.currentFilter) } // Trigger search when either changes
-        .debounce(500L) // Wait 500ms after user stops typing/clicking
+        .map { Pair(it.query, it.currentFilter) }
+        .debounce(500L)
         .distinctUntilChanged()
         .flatMapLatest { (query, filter) ->
             if (query.isNotBlank()) {
-                // Pass both variables to your repository
                 repository.getPagedSearchSongs(query, filter)
             } else {
                 flowOf(PagingData.empty())
@@ -45,6 +54,7 @@ class SearchViewModel @Inject constructor(
         .cachedIn(viewModelScope)
 
     fun processIntent(intent: SearchIntent) {
+        val uid = currentUserId.value
         when (intent) {
             is SearchIntent.UpdateQuery -> {
                 _uiState.update { it.copy(query = intent.query) }
@@ -53,15 +63,18 @@ class SearchViewModel @Inject constructor(
                 _uiState.update { it.copy(currentFilter = intent.filter) }
             }
             is SearchIntent.DeleteHistoryItem -> {
-                viewModelScope.launch { searchHistoryDao.deleteSearchQuery(intent.item.query) }
+                if (uid.isNotBlank()) {
+                    viewModelScope.launch { searchHistoryDao.deleteSearchQuery(intent.item.query, uid) }
+                }
             }
             is SearchIntent.SaveQuery -> {
-                if (intent.query.isNotBlank()) {
+                if (intent.query.isNotBlank() && uid.isNotBlank()) {
                     viewModelScope.launch {
                         searchHistoryDao.insertSearchQuery(
                             SearchHistoryEntity(
                                 query = intent.query.trim(),
-                                timestamp = System.currentTimeMillis()
+                                timestamp = System.currentTimeMillis(),
+                                accountId = uid // Save for active user
                             )
                         )
                     }

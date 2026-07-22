@@ -12,13 +12,17 @@ import com.example.kiwi.data.paging.SongPagingSource
 import com.example.kiwi.domain.model.Playlist
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.SongRepository
+import com.example.kiwi.domain.repository.UserPreferencesRepository // <-- ADDED
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi // <-- ADDED
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest // <-- ADDED
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf // <-- ADDED
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -26,7 +30,8 @@ import javax.inject.Inject
 
 class SongRepositoryImpl @Inject constructor(
     private val supabase: SupabaseClient,
-    private val dao: SongDao
+    private val dao: SongDao,
+    private val userPreferencesRepository: UserPreferencesRepository // <-- INJECTED HERE
 ) : SongRepository {
 
     override fun getFeaturedSongs(): Flow<List<Song>> = flow {
@@ -63,16 +68,31 @@ class SongRepositoryImpl @Inject constructor(
         }
     }
 
-    // Returns Flow directly from Room, mapping the inner List entities to Domain models
+    // UPDATED: Dynamically fetch active user ID and pass to DAO
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getDownloadedSongs(): Flow<List<Song>> {
-        return dao.getAllDownloadedSongs().map { entities ->
-            entities.map { it.toDomain() }
-        }
+        return userPreferencesRepository.userSettingsFlow
+            .map { it.username ?: "" }
+            .flatMapLatest { uid ->
+                if (uid.isBlank()) {
+                    flowOf(emptyList())
+                } else {
+                    dao.getAllDownloadedSongs(uid).map { entities ->
+                        entities.map { it.toDomain() }
+                    }
+                }
+            }
     }
 
     override suspend fun saveSongLocally(song: Song) {
         withContext(Dispatchers.IO) {
-            dao.insertSong(song.toEntity())
+            // Need the active account ID to save the song entity correctly
+            userPreferencesRepository.userSettingsFlow.collect { settings ->
+                val uid = settings.username
+                if (!uid.isNullOrBlank()) {
+                    dao.insertSong(song.toEntity(accountId = uid))
+                }
+            }
         }
     }
 
@@ -116,9 +136,18 @@ class SongRepositoryImpl @Inject constructor(
         }
     }
 
-    // Returns Flow directly from Room
+    // UPDATED: Dynamically fetch active user ID and pass to DAO
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getDownloadedSongCount(): Flow<Int> {
-        return dao.getDownloadedSongCount()
+        return userPreferencesRepository.userSettingsFlow
+            .map { it.username ?: "" }
+            .flatMapLatest { uid ->
+                if (uid.isBlank()) {
+                    flowOf(0)
+                } else {
+                    dao.getDownloadedSongCount(uid)
+                }
+            }
     }
 
     override fun getPagedFeaturedSongs(): Flow<PagingData<Song>> {
@@ -149,22 +178,15 @@ class SongRepositoryImpl @Inject constructor(
                 SongPagingSource { limit, offset ->
                     if (query.isBlank()) return@SongPagingSource emptyList()
 
-                    // If the filter is Playlists, this specific endpoint shouldn't return songs.
                     if (filter == "Playlists") return@SongPagingSource emptyList()
 
                     val response = supabase.postgrest["songs"]
                         .select {
                             filter {
-                                // Apply the specific backend filter based on the UI chip
                                 when (filter) {
-                                    "Songs" -> {
-                                        ilike("title", "%$query%")
-                                    }
-                                    "Artists" -> {
-                                        ilike("artist_name", "%$query%")
-                                    }
+                                    "Songs" -> ilike("title", "%$query%")
+                                    "Artists" -> ilike("artist_name", "%$query%")
                                     else -> {
-                                        // "All", "Users", or any unmapped state searches both
                                         or {
                                             ilike("title", "%$query%")
                                             ilike("artist_name", "%$query%")
@@ -204,9 +226,7 @@ class SongRepositoryImpl @Inject constructor(
                 SongPagingSource { limit, offset ->
                     val response = supabase.postgrest["playlist_songs"]
                         .select(columns = Columns.raw("songs(*)")) {
-                            filter {
-                                eq("playlist_id", playlistId)
-                            }
+                            filter { eq("playlist_id", playlistId) }
                             range(offset.toLong(), (offset + limit - 1).toLong())
                         }
                         .decodeList<PlaylistSongWrapper>()

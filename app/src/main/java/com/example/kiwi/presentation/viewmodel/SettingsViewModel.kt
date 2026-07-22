@@ -2,6 +2,7 @@ package com.example.kiwi.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kiwi.data.local.UserDao
 import com.example.kiwi.domain.repository.UserPreferencesRepository
 import com.example.kiwi.domain.repository.UserSettings
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,68 +14,75 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userDao: UserDao // <-- INJECT USER DAO
 ) : ViewModel() {
 
-    // Converts the DataStore Flow into a StateFlow for Compose
     val settingsState: StateFlow<UserSettings> = userPreferencesRepository.userSettingsFlow
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = UserSettings(
-                isDarkMode = true,
-                fontSize = 16f,
-                language = "en",
-                isPremium = false,
-                isLoggedIn = false,
-                accountEmail = null,    // FIXED: Added missing parameter
-                accountPassword = null, // FIXED: Added missing parameter
-                username = null,         // FIXED: Added missing parameter
-                profilePicUri = null
+                isDarkMode = true, fontSize = 16f, language = "en",
+                isPremium = false, isLoggedIn = false,
+                accountEmail = null, accountPassword = null,
+                username = null, profilePicUri = null
             )
         )
 
-    fun toggleDarkMode(isDark: Boolean) {
-        viewModelScope.launch {
-            userPreferencesRepository.toggleDarkMode(isDark)
-        }
-    }
-
-    fun setFontSize(size: Float) {
-        viewModelScope.launch {
-            userPreferencesRepository.setFontSize(size)
-        }
-    }
-
-    fun setLanguage(language: String) {
-        viewModelScope.launch {
-            userPreferencesRepository.setLanguage(language)
-        }
-    }
-
-    // Usually triggered after a successful mock payment
     fun upgradeToPremium() {
         viewModelScope.launch {
-            userPreferencesRepository.setPremiumStatus(true)
+            val email = settingsState.value.accountEmail
+            if (email != null) {
+                userDao.updatePremiumStatus(email, true) // Save to DB permanently
+                userPreferencesRepository.setPremiumStatus(true) // Update active session
+            }
         }
     }
 
     fun cancelPremium() {
         viewModelScope.launch {
-            userPreferencesRepository.setPremiumStatus(false)
-        }
-    }
-
-    // Add this function inside your SettingsViewModel
-    fun logOutUser() {
-        viewModelScope.launch {
-            userPreferencesRepository.setLoggedInState(false)
+            val email = settingsState.value.accountEmail
+            if (email != null) {
+                userDao.updatePremiumStatus(email, false) // Save to DB permanently
+                userPreferencesRepository.setPremiumStatus(false) // Update active session
+            }
         }
     }
 
     fun updateProfilePicture(uri: String) {
         viewModelScope.launch {
-            userPreferencesRepository.setProfilePictureUri(uri)
+            val email = settingsState.value.accountEmail
+            if (email != null) {
+                userDao.updateProfilePic(email, uri) // Save to DB permanently
+                userPreferencesRepository.setProfilePictureUri(uri) // Update active session
+            }
+        }
+    }
+
+    fun logOutUser() {
+        viewModelScope.launch {
+            userPreferencesRepository.clearUserSession()
+        }
+    }
+
+    fun toggleDarkMode(isDark: Boolean) {
+        viewModelScope.launch {
+            val email = settingsState.value.accountEmail
+            if (email != null) {
+                userDao.updateDarkMode(email, isDark) // Save permanently
+            }
+            userPreferencesRepository.toggleDarkMode(isDark) // Update active session
+        }
+    }
+
+    fun setLanguage(language: String) {
+        viewModelScope.launch {
+            val email = settingsState.value.accountEmail
+            if (email != null) {
+                userDao.updateLanguage(email, language) // Save permanently
+            }
+            userPreferencesRepository.setLanguage(language) // Update active session
         }
     }
 }

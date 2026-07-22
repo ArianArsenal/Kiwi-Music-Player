@@ -149,7 +149,8 @@ fun KiwiNavGraph(
                 onBackClick = { navController.popBackStack() },
                 onChatClick = { friendId, friendName ->
                     navController.navigate("chat_screen/$friendId/$friendName")
-                }
+                },
+                onSearchClick = { navController.navigate("social_search_screen") }
             )
         }
 

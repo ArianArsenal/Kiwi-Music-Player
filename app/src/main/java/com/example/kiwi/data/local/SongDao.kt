@@ -9,22 +9,20 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SongDao {
 
-    // Returns a Flow so the UI updates automatically whenever a song is downloaded or deleted
-    @Query("SELECT * FROM SongEntity")
-    fun getAllSongs(): Flow<List<SongEntity>>
+    // Returns a Flow of downloaded songs for the active user
+    @Query("SELECT * FROM SongEntity WHERE accountId = :accountId")
+    fun getAllSongs(accountId: String): Flow<List<SongEntity>>
 
-    // Deletes a specific song using its ID
-    @Query("DELETE FROM SongEntity WHERE id = :songId")
-    suspend fun deleteSongById(songId: String)
+    // Deletes a specific downloaded song for the active user
+    @Query("DELETE FROM SongEntity WHERE id = :songId AND accountId = :accountId")
+    suspend fun deleteSongById(songId: String, accountId: String)
 
-    // Assuming you already have this for saving downloads, but here it is just in case!
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSong(song: SongEntity)
 
-    @Query("SELECT * FROM SongEntity")
-    fun getAllDownloadedSongs(): Flow<List<SongEntity>>
+    @Query("SELECT * FROM SongEntity WHERE accountId = :accountId")
+    fun getAllDownloadedSongs(accountId: String): Flow<List<SongEntity>>
 
-    // Returns a Flow, so NO suspend keyword is needed
-    @Query("SELECT COUNT(*) FROM SongEntity")
-    fun getDownloadedSongCount(): Flow<Int>
+    @Query("SELECT COUNT(*) FROM SongEntity WHERE accountId = :accountId")
+    fun getDownloadedSongCount(accountId: String): Flow<Int>
 }

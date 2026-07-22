@@ -1,7 +1,6 @@
 package com.example.kiwi.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,7 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -21,17 +20,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.kiwi.R
+import com.example.kiwi.domain.model.Song
 import com.example.kiwi.presentation.components.MessageBubble
 import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.ChatViewModel
-import com.example.kiwi.presentation.viewmodel.PlayerViewModel
-import com.example.kiwi.presentation.viewmodel.DownloadsViewModel
 import com.example.kiwi.presentation.viewmodel.PlayerIntent
+import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,19 +40,21 @@ fun ChatScreen(
     friendName: String,
     viewModel: ChatViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel,
-    downloadsViewModel: DownloadsViewModel = hiltViewModel(),
     onBackClick: () -> Unit
 ) {
-
     LaunchedEffect(friendId) {
         viewModel.setChatPartner(friendId)
     }
+
     val messages by viewModel.messages.collectAsState()
     val inputText by viewModel.inputText.collectAsState()
     val isTyping by viewModel.isFriendTyping.collectAsState()
+    val currentUserId by viewModel.currentUserId.collectAsState()
 
+    // Song picker states
     var showSongPicker by remember { mutableStateOf(false) }
-    val downloadsState by downloadsViewModel.uiState.collectAsState()
+    val songSearchQuery by viewModel.songSearchQuery.collectAsState()
+    val songSearchResults by viewModel.songSearchResults.collectAsState()
 
     val dimens = LocalDimens.current
     val listState = rememberLazyListState()
@@ -89,19 +91,27 @@ fun ChatScreen(
                 contentPadding = PaddingValues(vertical = dimens.medium)
             ) {
                 items(messages) { message ->
-                    val sharedSong = message.sharedSongId?.let { id ->
-                        downloadsState.downloadedSongs.find { it.id == id }
-                    }
+                    val songTitle = message.sharedSongTitle ?: "Unknown Track"
+                    val songArtist = message.sharedSongArtist ?: "Shared Song"
+                    val songCover = message.sharedSongCoverUrl
+                    val songAudioUrl = message.sharedSongAudioUrl
 
                     MessageBubble(
                         message = message,
-                        isOwnMessage = message.senderId == viewModel.currentUserId,
-                        sharedSongTitle = sharedSong?.title,
-                        sharedSongArtist = stringResource(id = R.string.downloaded_track),
-                        sharedSongCoverUrl = sharedSong?.coverImageUrl,
+                        isOwnMessage = message.senderId == currentUserId, // FIX: Efficient direct state usage
+                        sharedSongTitle = if (message.sharedSongId != null) songTitle else null,
+                        sharedSongArtist = songArtist,
+                        sharedSongCoverUrl = songCover,
                         onSongClick = {
-                            if (sharedSong != null) {
-                                playerViewModel.processIntent(PlayerIntent.PlaySongList(listOf(sharedSong), 0))
+                            if (songAudioUrl != null) {
+                                val playableSong = Song(
+                                    id = message.sharedSongId ?: java.util.UUID.randomUUID().toString(),
+                                    title = songTitle,
+                                    artistName = songArtist,
+                                    coverImageUrl = songCover ?: "",
+                                    audioUrl = songAudioUrl
+                                )
+                                playerViewModel.processIntent(PlayerIntent.PlaySongList(listOf(playableSong), 0))
                             }
                         }
                     )
@@ -149,24 +159,54 @@ fun ChatScreen(
         }
     }
 
+    // NEW: Global Song Picker Bottom Sheet with Search
     if (showSongPicker) {
         ModalBottomSheet(onDismissRequest = { showSongPicker = false }) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(stringResource(id = R.string.share_a_track), style = MaterialTheme.typography.titleLarge)
-                Text(stringResource(id = R.string.select_downloaded_song), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.share_a_track),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Global Search Bar
+                OutlinedTextField(
+                    value = songSearchQuery,
+                    onValueChange = { viewModel.updateSongSearchQuery(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search songs online...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                if (downloadsState.downloadedSongs.isEmpty()) {
-                    Text(stringResource(id = R.string.no_downloaded_songs_share))
+                if (songSearchResults.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No songs found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 } else {
-                    LazyColumn {
-                        items(downloadsState.downloadedSongs) { song ->
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 350.dp)
+                    ) {
+                        items(songSearchResults) { song ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
                                     .clickable {
-                                        viewModel.shareSong(song.id)
+                                        viewModel.shareSong(song)
                                         showSongPicker = false
                                     }
                                     .padding(8.dp),
@@ -185,20 +225,23 @@ fun ChatScreen(
                                     Text(
                                         text = song.title,
                                         style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = stringResource(id = R.string.tap_to_share),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        text = song.artistName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

@@ -146,4 +146,7 @@
 
 
     <string name="cancel_premium">لغو اشتراک ویژه</string>
+
+    <string name="search_username">جستجوی نام کاربری...</string>
+    <string name="no_users_found">کاربری یافت نشد</string>
 </resources>

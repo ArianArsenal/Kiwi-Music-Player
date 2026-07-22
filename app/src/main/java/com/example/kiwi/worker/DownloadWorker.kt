@@ -38,11 +38,13 @@ class DownloadWorker(
         val artist = inputData.getString("ARTIST_NAME") ?: "Unknown Artist"
         val coverUrl = inputData.getString("COVER_URL") ?: ""
 
+        // 1. Get the account ID that requested this download
+        val accountId = inputData.getString("ACCOUNT_ID") ?: return Result.failure()
+
         return withContext(Dispatchers.IO) {
             try {
                 val file = File(context.filesDir, "$songId.mp3")
 
-                // HIGH SPEED BUFFER BUFFERING: Using a 8KB buffer size optimizes disk writes
                 URL(audioUrl).openStream().use { input ->
                     FileOutputStream(file).use { output ->
                         val buffer = ByteArray(8192)
@@ -56,16 +58,17 @@ class DownloadWorker(
                 val entryPoint = EntryPointAccessors.fromApplication(context, DownloadWorkerEntryPoint::class.java)
                 val database = entryPoint.getDatabase()
 
+                // 2. Attach the accountId to the entity
                 val downloadedSong = SongEntity(
                     id = songId,
                     title = title,
                     artistName = artist,
                     coverImageUrl = coverUrl,
-                    audioUrl = file.absolutePath // Local storage file pathway
+                    audioUrl = file.absolutePath,
+                    accountId = accountId // NEW: MUST ADD TO SongEntity
                 )
                 database.songDao.insertSong(downloadedSong)
 
-                // Dispatch System Alert Notification upon successful completion
                 showNotification("Download Finished", "$title is now available offline.")
 
                 Result.success()
@@ -87,7 +90,7 @@ class DownloadWorker(
         }
 
         val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher) // Use your application's icon asset package prefix
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(message)
             .setAutoCancel(true)

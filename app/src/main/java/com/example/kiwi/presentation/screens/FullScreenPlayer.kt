@@ -2,6 +2,9 @@ package com.example.kiwi.presentation.screens
 
 import android.graphics.Bitmap
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -41,10 +44,13 @@ import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 import com.example.kiwi.worker.DownloadWorker
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FullScreenPlayer(
     viewModel: PlayerViewModel,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val song = uiState.currentSong ?: return
@@ -53,6 +59,9 @@ fun FullScreenPlayer(
 
     var showMenu by remember { mutableStateOf(false) }
     val isPremiumUser by viewModel.isPremium.collectAsState()
+
+    // Collect active user ID for user-scoped background downloads
+    val currentUserId by viewModel.currentUserId.collectAsState()
 
     // Dynamic Background Color Animation
     val targetColor = uiState.dominantColor?.let { Color(it) } ?: MaterialTheme.colorScheme.background
@@ -131,6 +140,7 @@ fun FullScreenPlayer(
                                         .putString("SONG_TITLE", song.title)
                                         .putString("ARTIST_NAME", song.artistName)
                                         .putString("COVER_URL", song.coverImageUrl)
+                                        .putString("ACCOUNT_ID", currentUserId)
                                         .build()
 
                                     val request = OneTimeWorkRequestBuilder<DownloadWorker>()
@@ -157,13 +167,25 @@ fun FullScreenPlayer(
 
             Spacer(modifier = Modifier.height(dimens.extraLarge))
 
-            // Animated CD Cover with Palette Color Extraction
+            // Animated CD Cover with Optional Shared Element Transition
+            val imageModifier = Modifier
+                .size(280.dp)
+                .then(
+                    if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                        with(sharedTransitionScope) {
+                            Modifier.sharedElement(
+                                state = rememberSharedContentState(key = "cover-${song.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            )
+                        }
+                    } else Modifier
+                )
+                .graphicsLayer { rotationZ = currentRotation }
+                .clip(CircleShape)
+                .background(Color.Black)
+
             Box(
-                modifier = Modifier
-                    .size(280.dp)
-                    .graphicsLayer { rotationZ = currentRotation }
-                    .clip(CircleShape)
-                    .background(Color.Black),
+                modifier = imageModifier,
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
@@ -227,16 +249,45 @@ fun FullScreenPlayer(
 
             Spacer(modifier = Modifier.height(dimens.large))
 
-            // Progress Slider
-            Slider(
-                value = uiState.progress,
-                onValueChange = { },
-                modifier = Modifier.fillMaxWidth(),
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
+            // Time formatting helper
+            fun formatTime(ms: Long): String {
+                val totalSeconds = ms / 1000
+                val minutes = totalSeconds / 60
+                val seconds = totalSeconds % 60
+                return String.format("%02d:%02d", minutes, seconds)
+            }
+
+            // Progress Slider and Time Labels
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Slider(
+                    value = uiState.progress,
+                    onValueChange = { newProgress ->
+                        viewModel.processIntent(PlayerIntent.SeekToFraction(newProgress))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary
+                    )
                 )
-            )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = formatTime(uiState.currentPositionMs),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = formatTime(uiState.durationMs),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    )
+                }
+            }
 
             // Playback Controls
             Row(

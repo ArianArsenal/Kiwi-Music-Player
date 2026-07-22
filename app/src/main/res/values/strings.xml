@@ -145,4 +145,7 @@
     <string name="verified_premium">Premium Verified</string>
 
     <string name="cancel_premium">Cancel Premium Subscription</string>
+
+    <string name="search_username">Search username...</string>
+    <string name="no_users_found">No users found</string>
 </resources>

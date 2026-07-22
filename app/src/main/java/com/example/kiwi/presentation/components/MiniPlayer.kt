@@ -1,6 +1,8 @@
 package com.example.kiwi.presentation.components
 
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +24,7 @@ import coil.compose.AsyncImage
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.presentation.theme.LocalDimens
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MiniPlayer(
     song: Song,
@@ -30,91 +33,99 @@ fun MiniPlayer(
     onPlayPauseClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
-    onNavigateToPlayer: () -> Unit // We will use this in Batch 3 for the Now Playing screen!
+    onNavigateToPlayer: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope, // <-- ADDED
+    animatedVisibilityScope: AnimatedVisibilityScope // <-- ADDED
 ) {
     val dimens = LocalDimens.current
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = dimens.small, vertical = dimens.extraSmall)
-            .clickable { onNavigateToPlayer() },
-        shape = RoundedCornerShape(dimens.small),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(dimens.small),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Cover Art
-                AsyncImage(
-                    model = song.coverImageUrl,
-                    contentDescription = "Cover",
-                    contentScale = ContentScale.Crop,
+    with(sharedTransitionScope) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = dimens.small, vertical = dimens.extraSmall)
+                .clickable { onNavigateToPlayer() },
+            shape = RoundedCornerShape(dimens.small),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
                     modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(dimens.extraSmall))
+                        .fillMaxWidth()
+                        .padding(dimens.small),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // LINKED ELEMENT: The Cover Art
+                    AsyncImage(
+                        model = song.coverImageUrl,
+                        contentDescription = "Cover",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "cover-${song.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            )
+                            .clip(RoundedCornerShape(dimens.extraSmall))
+                    )
+
+                    Spacer(modifier = Modifier.width(dimens.small))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = song.title,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = song.artistName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    // 1. Previous Button First
+                    IconButton(onClick = onPreviousClick) {
+                        Icon(
+                            imageVector = Icons.Default.SkipPrevious,
+                            contentDescription = "Previous",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // 2. Play/Pause Button Middle
+                    IconButton(onClick = onPlayPauseClick) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = "Play/Pause",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // 3. Next Button Last
+                    IconButton(onClick = onNextClick) {
+                        Icon(
+                            imageVector = Icons.Default.SkipNext,
+                            contentDescription = "Next",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                 )
-
-                Spacer(modifier = Modifier.width(dimens.small))
-
-                // Track Info
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = song.title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = song.artistName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                IconButton(onClick = onPreviousClick) {
-                    Icon(
-                        imageVector = Icons.Default.SkipPrevious,
-                        contentDescription = "Previous",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                // Controls
-                IconButton(onClick = onPlayPauseClick) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = "Play/Pause",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                IconButton(onClick = onNextClick) {
-                    Icon(
-                        imageVector = Icons.Default.SkipNext,
-                        contentDescription = "Next",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
             }
-
-            // Thin progress bar across the bottom
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp),
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
-            )
         }
     }
 }

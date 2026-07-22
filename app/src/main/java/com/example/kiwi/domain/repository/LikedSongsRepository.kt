@@ -10,12 +10,12 @@ import javax.inject.Singleton
 class LikedSongsRepository @Inject constructor(
     private val likedSongsDao: LikedSongsDao
 ) {
-    fun getAllLikedSongs(): Flow<List<LikedSongEntity>> {
-        return likedSongsDao.getAllLikedSongs()
+    fun getAllLikedSongs(accountId: String): Flow<List<LikedSongEntity>> {
+        return likedSongsDao.getAllLikedSongs(accountId)
     }
 
-    fun isSongLiked(songId: String): Flow<Boolean> {
-        return likedSongsDao.isSongLiked(songId)
+    fun isSongLiked(songId: String, accountId: String): Flow<Boolean> {
+        return likedSongsDao.isSongLiked(songId, accountId)
     }
 
     suspend fun toggleLikeState(
@@ -23,17 +23,19 @@ class LikedSongsRepository @Inject constructor(
         title: String,
         artistName: String,
         coverImageUrl: String,
-        isCurrentlyLiked: Boolean
+        isCurrentlyLiked: Boolean,
+        accountId: String
     ) {
         if (isCurrentlyLiked) {
-            likedSongsDao.unlikeSong(songId)
+            likedSongsDao.unlikeSong(songId, accountId)
         } else {
             val entity = LikedSongEntity(
                 songId = songId,
                 title = title,
                 artistName = artistName,
                 coverImageUrl = coverImageUrl,
-                timestamp = System.currentTimeMillis()
+                timestamp = System.currentTimeMillis(),
+                accountId = accountId // Pass the nametag to the entity
             )
             likedSongsDao.likeSong(entity)
         }

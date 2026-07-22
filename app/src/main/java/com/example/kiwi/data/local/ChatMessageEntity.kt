@@ -12,11 +12,15 @@ data class ChatMessageEntity(
     val receiverId: String,
     val text: String,
     val timestamp: Long,
-    val status: String, // Room doesn't store Enums easily, so we save the String name
-    val sharedSongId: String?
+    val status: String,
+    val sharedSongId: String?,
+    val sharedSongTitle: String? = null,
+    val sharedSongArtist: String? = null,
+    val sharedSongCoverUrl: String? = null,
+    val sharedSongAudioUrl: String? = null
 )
 
-// Mapping extensions
+// FIX: Pass all embedded fields to the domain model
 fun ChatMessageEntity.toDomain() = ChatMessage(
     id = id,
     senderId = senderId,
@@ -24,9 +28,14 @@ fun ChatMessageEntity.toDomain() = ChatMessage(
     text = text,
     timestamp = timestamp,
     status = MessageStatus.valueOf(status),
-    sharedSongId = sharedSongId
+    sharedSongId = sharedSongId,
+    sharedSongTitle = sharedSongTitle,
+    sharedSongArtist = sharedSongArtist,
+    sharedSongCoverUrl = sharedSongCoverUrl,
+    sharedSongAudioUrl = sharedSongAudioUrl
 )
 
+// FIX: Store all embedded fields into Room
 fun ChatMessage.toEntity() = ChatMessageEntity(
     id = id,
     senderId = senderId,
@@ -34,5 +43,9 @@ fun ChatMessage.toEntity() = ChatMessageEntity(
     text = text,
     timestamp = timestamp,
     status = status.name,
-    sharedSongId = sharedSongId
+    sharedSongId = sharedSongId,
+    sharedSongTitle = sharedSongTitle,
+    sharedSongArtist = sharedSongArtist,
+    sharedSongCoverUrl = sharedSongCoverUrl,
+    sharedSongAudioUrl = sharedSongAudioUrl
 )

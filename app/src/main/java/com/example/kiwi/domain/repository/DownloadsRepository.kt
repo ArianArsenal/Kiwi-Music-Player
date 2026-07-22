@@ -10,27 +10,29 @@ import javax.inject.Singleton
 class DownloadsRepository @Inject constructor(
     private val downloadedFilesDao: DownloadedFilesDao
 ) {
-    fun getAllDownloadedFiles(): Flow<List<DownloadedFileEntity>> {
-        return downloadedFilesDao.getAllDownloadedFiles()
+    fun getAllDownloadedFiles(accountId: String): Flow<List<DownloadedFileEntity>> {
+        return downloadedFilesDao.getAllDownloadedFiles(accountId)
     }
 
     suspend fun saveDownloadRecord(
         songId: String,
         title: String,
         artistName: String,
-        localFilePath: String
+        localFilePath: String,
+        accountId: String
     ) {
         val entity = DownloadedFileEntity(
             songId = songId,
             title = title,
             artistName = artistName,
             localFilePath = localFilePath,
-            downloadedAt = System.currentTimeMillis()
+            downloadedAt = System.currentTimeMillis(),
+            accountId = accountId
         )
         downloadedFilesDao.saveDownloadedFile(entity)
     }
 
-    suspend fun removeDownloadRecord(songId: String) {
-        downloadedFilesDao.removeDownloadedFile(songId)
+    suspend fun removeDownloadRecord(songId: String, accountId: String) {
+        downloadedFilesDao.removeDownloadedFile(songId, accountId)
     }
 }

@@ -10,19 +10,20 @@ import javax.inject.Singleton
 class SearchHistoryRepository @Inject constructor(
     private val searchHistoryDao: SearchHistoryDao
 ) {
-    fun getRecentSearches(): Flow<List<SearchHistoryEntity>> {
-        return searchHistoryDao.getRecentSearches()
+    fun getRecentSearches(accountId: String): Flow<List<SearchHistoryEntity>> {
+        return searchHistoryDao.getRecentSearches(accountId)
     }
 
-    suspend fun saveSearchQuery(query: String) {
+    suspend fun saveSearchQuery(query: String, accountId: String) {
         val entity = SearchHistoryEntity(
             query = query,
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            accountId = accountId
         )
         searchHistoryDao.insertSearchQuery(entity)
     }
 
-    suspend fun clearHistory() {
-        searchHistoryDao.clearHistory()
+    suspend fun clearHistory(accountId: String) {
+        searchHistoryDao.clearHistory(accountId)
     }
 }

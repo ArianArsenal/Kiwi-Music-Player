@@ -58,6 +58,8 @@ fun SearchScreen(
     val context = LocalContext.current
     val isPremiumUser by playerViewModel.isPremium.collectAsState()
 
+    val currentUserId by playerViewModel.currentUserId.collectAsState()
+
     val filters = listOf(
         "All" to R.string.filter_all,
         "Songs" to R.string.filter_songs,
@@ -237,6 +239,7 @@ fun SearchScreen(
                                                     .putString("SONG_TITLE", clickedSong.title)
                                                     .putString("ARTIST_NAME", clickedSong.artistName)
                                                     .putString("COVER_URL", clickedSong.coverImageUrl)
+                                                    .putString("ACCOUNT_ID", currentUserId)
                                                     .build()
 
                                                 val downloadRequest = OneTimeWorkRequestBuilder<DownloadWorker>()

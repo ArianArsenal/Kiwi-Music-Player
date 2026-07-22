@@ -12,7 +12,6 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// Extension property to create the DataStore instance
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "kiwi_settings")
 
 data class UserSettings(
@@ -21,8 +20,8 @@ data class UserSettings(
     val language: String,
     val isPremium: Boolean,
     val isLoggedIn: Boolean,
-    val accountEmail: String?,    // NEW
-    val accountPassword: String?, // NEW
+    val accountEmail: String?,
+    val accountPassword: String?,
     val username: String?,
     val profilePicUri: String?
 )
@@ -37,8 +36,8 @@ class UserPreferencesRepository @Inject constructor(
         val LANGUAGE = stringPreferencesKey("language")
         val IS_PREMIUM = booleanPreferencesKey("is_premium")
         val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
-        val ACCOUNT_EMAIL = stringPreferencesKey("account_email")       // NEW
-        val ACCOUNT_PASSWORD = stringPreferencesKey("account_password") // NEW
+        val ACCOUNT_EMAIL = stringPreferencesKey("account_email")
+        val ACCOUNT_PASSWORD = stringPreferencesKey("account_password")
         val USERNAME = stringPreferencesKey("username")
         val PROFILE_PIC_URI = stringPreferencesKey("profile_pic_uri")
     }
@@ -53,10 +52,10 @@ class UserPreferencesRepository @Inject constructor(
         }
         .map { preferences ->
             UserSettings(
-                isDarkMode = preferences[PreferencesKeys.IS_DARK_MODE] ?: true, // Default to Dark Mode
-                fontSize = preferences[PreferencesKeys.FONT_SIZE] ?: 16f,       // Default font size
-                language = preferences[PreferencesKeys.LANGUAGE] ?: "en",       // Default language
-                isPremium = preferences[PreferencesKeys.IS_PREMIUM] ?: false,    // Default to normal tier
+                isDarkMode = preferences[PreferencesKeys.IS_DARK_MODE] ?: true,
+                fontSize = preferences[PreferencesKeys.FONT_SIZE] ?: 16f,
+                language = preferences[PreferencesKeys.LANGUAGE] ?: "en",
+                isPremium = preferences[PreferencesKeys.IS_PREMIUM] ?: false,
                 isLoggedIn = preferences[PreferencesKeys.IS_LOGGED_IN] ?: false,
                 accountEmail = preferences[PreferencesKeys.ACCOUNT_EMAIL],
                 accountPassword = preferences[PreferencesKeys.ACCOUNT_PASSWORD],
@@ -101,12 +100,26 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    // NEW: Save credentials on Sign Up
     suspend fun saveAccountCredentials(email: String, password: String, username: String) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.ACCOUNT_EMAIL] = email
             preferences[PreferencesKeys.ACCOUNT_PASSWORD] = password
             preferences[PreferencesKeys.USERNAME] = username
+        }
+    }
+
+    // NEW: Retain core settings (language/theme) while wiping user profile specific data
+    suspend fun clearUserSession() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(PreferencesKeys.IS_LOGGED_IN)
+            preferences.remove(PreferencesKeys.IS_PREMIUM)
+            preferences.remove(PreferencesKeys.PROFILE_PIC_URI)
+            preferences.remove(PreferencesKeys.USERNAME)
+            preferences.remove(PreferencesKeys.ACCOUNT_EMAIL)
+            preferences.remove(PreferencesKeys.ACCOUNT_PASSWORD)
+
+            preferences.remove(PreferencesKeys.IS_DARK_MODE)
+            preferences.remove(PreferencesKeys.LANGUAGE)
         }
     }
 }
