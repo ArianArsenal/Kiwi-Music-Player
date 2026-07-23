@@ -23,6 +23,7 @@ class LikedSongsRepository @Inject constructor(
         title: String,
         artistName: String,
         coverImageUrl: String,
+        audioUrl: String, // <-- NEW: Added audioUrl parameter
         isCurrentlyLiked: Boolean,
         accountId: String
     ) {
@@ -35,7 +36,8 @@ class LikedSongsRepository @Inject constructor(
                 artistName = artistName,
                 coverImageUrl = coverImageUrl,
                 timestamp = System.currentTimeMillis(),
-                accountId = accountId // Pass the nametag to the entity
+                accountId = accountId,
+                audioUrl = audioUrl
             )
             likedSongsDao.likeSong(entity)
         }

@@ -3,9 +3,6 @@ package com.example.kiwi.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 
-// Notice we do NOT import from com.example.kiwi.data.local.room anymore.
-// All entities and DAOs are now safely inside the same 'local' package.
-
 @Database(
     entities = [
         SongEntity::class,
@@ -13,21 +10,22 @@ import androidx.room.RoomDatabase
         SearchHistoryEntity::class,
         LikedSongEntity::class,
         DownloadedFileEntity::class,
-        UserEntity::class
+        UserEntity::class,
+        RecentlyPlayedEntity::class,
+        FollowEntity::class
     ],
-    version = 3,
+    version = 6, // <-- BUMPED TO 6
     exportSchema = false
 )
 abstract class KiwiDatabase : RoomDatabase() {
 
-    // Existing DAOs accessed as properties (matches your DatabaseModule)
     abstract val songDao: SongDao
     abstract val chatDao: ChatDao
+    abstract val userDao: UserDao
 
-    // New DAOs accessed as functions (fixes the "invoke()" error)
     abstract fun searchHistoryDao(): SearchHistoryDao
     abstract fun likedSongsDao(): LikedSongsDao
     abstract fun downloadedFilesDao(): DownloadedFilesDao
-
-    abstract val userDao: UserDao
+    abstract fun recentlyPlayedDao(): RecentlyPlayedDao
+    abstract fun followDao(): FollowDao
 }

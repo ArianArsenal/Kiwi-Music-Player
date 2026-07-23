@@ -18,7 +18,6 @@ sealed class Screen(val route: String) {
     object Playlists : Screen("playlists")
     object Profile : Screen("profile")
     object Settings : Screen("settings")
-
     object Auth : Screen("auth_screen")
 
     object PlaylistDetail : Screen("playlist_detail/{playlistId}") {
@@ -37,12 +36,13 @@ fun KiwiNavGraph(
         startDestination = Screen.Auth.route,
         modifier = modifier
     ) {
-
         composable(Screen.Home.route) {
             HomeScreen(
                 playerViewModel = playerViewModel,
                 onLikedSongsClick = { navController.navigate("liked_songs") },
-                onPlaylistsClick = { navController.navigate(Screen.Playlists.route) }
+                onPlaylistsClick = { navController.navigate(Screen.Playlists.route) },
+                onRecentlyPlayedClick = { navController.navigate("recently_played") },
+                onTopArtistsClick = { navController.navigate("top_artists") }
             )
         }
 
@@ -63,16 +63,44 @@ fun KiwiNavGraph(
 
         composable("user_profile/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
-
-            com.example.kiwi.presentation.screens.UserProfileScreen(
+            UserProfileScreen(
                 userId = userId,
                 onBackClick = { navController.popBackStack() },
-                onPlaylistClick = { playlistId ->
-                    navController.navigate("playlist_detail/$playlistId")
-                },
-                onMessageClick = { id, name ->
-                    navController.navigate("chat_screen/$id/$name")
-                }
+                onPlaylistClick = { playlistId -> navController.navigate("playlist_detail/$playlistId") },
+                onMessageClick = { id, name -> navController.navigate("chat_screen/$id/$name") },
+                onFollowersClick = { uid -> navController.navigate("connections/$uid/followers") },
+                onFollowingClick = { uid -> navController.navigate("connections/$uid/following") }
+            )
+        }
+
+        composable(
+            route = "connections/{userId}/{type}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("type") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val uid = backStackEntry.arguments?.getString("userId") ?: ""
+            val type = backStackEntry.arguments?.getString("type") ?: "followers"
+
+            com.example.kiwi.presentation.screens.UserConnectionsScreen(
+                userId = uid,
+                connectionType = type,
+                onBackClick = { navController.popBackStack() },
+                onUserClick = { clickedUserId -> navController.navigate("user_profile/$clickedUserId") }
+            )
+        }
+
+        composable("recently_played") {
+            com.example.kiwi.presentation.screens.RecentlyPlayedScreen(
+                onBackClick = { navController.popBackStack() },
+                playerViewModel = playerViewModel
+            )
+        }
+
+        composable("top_artists") {
+            com.example.kiwi.presentation.screens.TopArtistsScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -89,7 +117,12 @@ fun KiwiNavGraph(
                 onSettingsClick = { navController.navigate(Screen.Settings.route) },
                 onFindFriendsClick = { navController.navigate("social_search_screen") },
                 onLikedSongsClick = { navController.navigate("liked_songs") },
-                onFollowingClick = { navController.navigate("following") }
+                onFollowersClick = { uid -> navController.navigate("connections/$uid/followers") },
+                onFollowingClick = { uid -> navController.navigate("connections/$uid/following") },
+                onRecentlyPlayedClick = { navController.navigate("recently_played") },
+                onTopArtistsClick = { navController.navigate("top_artists") },
+                onUsernameClick = { uid -> navController.navigate("user_profile/$uid") },
+                onMyPlaylistsClick = { navController.navigate(Screen.Playlists.route) } // <-- ADDED
             )
         }
 
@@ -98,9 +131,9 @@ fun KiwiNavGraph(
             SettingsScreen(
                 onBackClick = { navController.popBackStack() },
                 onLogoutClick = {
-                    settingsViewModel.logOutUser() // <-- Calls the new ViewModel function
+                    settingsViewModel.logOutUser()
                     navController.navigate(Screen.Auth.route) {
-                        popUpTo(0) // Wipe the backstack
+                        popUpTo(0)
                     }
                 }
             )
@@ -113,12 +146,6 @@ fun KiwiNavGraph(
                         com.example.kiwi.presentation.viewmodel.PlayerIntent.PlaySongList(songs, startIndex)
                     )
                 },
-                onBackClick = { navController.popBackStack() } // <-- ADDED THIS LINE
-            )
-        }
-
-        composable("following") {
-            com.example.kiwi.presentation.screens.FollowingScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -136,7 +163,6 @@ fun KiwiNavGraph(
         composable(Screen.Auth.route) {
             AuthScreen(
                 onAuthSuccess = {
-                    // When login succeeds, go to Home and clear the Auth screen from history
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Auth.route) { inclusive = true }
                     }
@@ -164,7 +190,6 @@ fun KiwiNavGraph(
             val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
             val friendName = backStackEntry.arguments?.getString("friendName") ?: "Friend"
 
-            // Renamed to avoid shadowing the global playerViewModel parameter
             val localPlayerViewModel: com.example.kiwi.presentation.viewmodel.PlayerViewModel =
                 androidx.hilt.navigation.compose.hiltViewModel(LocalContext.current as androidx.activity.ComponentActivity)
 

@@ -1,7 +1,6 @@
 package com.example.kiwi.presentation.screens
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
@@ -27,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.kiwi.R
 import com.example.kiwi.presentation.viewmodel.SettingsViewModel
+import com.example.kiwi.presentation.viewmodel.SocialViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -35,38 +35,41 @@ fun ProfileScreen(
     onSettingsClick: () -> Unit,
     onFindFriendsClick: () -> Unit,
     onLikedSongsClick: () -> Unit,
-    onFollowingClick: () -> Unit,
-    viewModel: SettingsViewModel = hiltViewModel()
+    onFollowersClick: (String) -> Unit,
+    onFollowingClick: (String) -> Unit,
+    onRecentlyPlayedClick: () -> Unit,
+    onTopArtistsClick: () -> Unit,
+    onUsernameClick: (String) -> Unit,
+    onMyPlaylistsClick: () -> Unit, // <-- ADDED
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
+    socialViewModel: SocialViewModel = hiltViewModel()
 ) {
-    val settings by viewModel.settingsState.collectAsState()
+    val settings by settingsViewModel.settingsState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     val username = settings.username ?: "User"
     val premiumText = if (settings.isPremium) stringResource(id = R.string.premium_member) else stringResource(id = R.string.normal_user)
 
+    val followerCount by socialViewModel.getFollowerCount(username).collectAsState(initial = 0)
+    val followingCount by socialViewModel.getFollowingCount(username).collectAsState(initial = 0)
+
     var isUpgrading by remember { mutableStateOf(false) }
 
-    // Gallery Image Picker Launcher
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            // 1. Take persistable permission so the URI survives app restarts
             val flag = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
             try {
                 context.contentResolver.takePersistableUriPermission(it, flag)
             } catch (e: Exception) {
-                // If it fails (some custom galleries don't support this), it will just fallback to temporary
                 e.printStackTrace()
             }
-
-            // 2. Save to DataStore
-            viewModel.updateProfilePicture(it.toString())
+            settingsViewModel.updateProfilePicture(it.toString())
         }
     }
 
-    // Removed the Scaffold completely to fix the layout gap and remove the duplicate TopBar
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp)
@@ -85,7 +88,6 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Clickable Avatar
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -118,53 +120,78 @@ fun ProfileScreen(
 
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(username, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = username,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable { onUsernameClick(username) } // <-- FIXED: Now uses onUsernameClick
+                        )
 
-                        // Premium Golden Badge
                         if (settings.isPremium) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = Icons.Default.Verified,
                                 contentDescription = stringResource(id = R.string.verified_premium),
-                                tint = Color(0xFFFFD700), // Gold
+                                tint = Color(0xFFFFD700),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                     Text(premiumText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Row(modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable { onFollowersClick(username) }
+                            .padding(4.dp)
+                        ) {
+                            Text("$followerCount ", fontWeight = FontWeight.Bold)
+                            Text(stringResource(id = R.string.followers), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Row(modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable { onFollowingClick(username) }
+                            .padding(4.dp)
+                        ) {
+                            Text("$followingCount ", fontWeight = FontWeight.Bold)
+                            Text(stringResource(id = R.string.following), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Golden Subscription Button
         if (!settings.isPremium) {
             item {
                 Button(
                     onClick = {
                         scope.launch {
                             isUpgrading = true
-                            delay(2000) // Simulate network request animation
-                            viewModel.upgradeToPremium()
+                            delay(2000)
+                            settingsViewModel.upgradeToPremium()
                             isUpgrading = false
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 24.dp)
-                        .animateContentSize(), // Modern layout animation
+                        .animateContentSize(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFD700), // Gold
+                        containerColor = Color(0xFFFFD700),
                         contentColor = Color.Black
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     if (isUpgrading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.Black,
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.Black, strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(stringResource(id = R.string.upgrading), fontWeight = FontWeight.Bold)
                     } else {
@@ -186,14 +213,6 @@ fun ProfileScreen(
 
         item {
             ProfileMenuItem(
-                icon = Icons.Default.People,
-                title = stringResource(id = R.string.following_top_artists),
-                onClick = onFollowingClick
-            )
-        }
-
-        item {
-            ProfileMenuItem(
                 icon = Icons.Default.Search,
                 title = stringResource(id = R.string.find_friends),
                 onClick = onFindFriendsClick
@@ -204,7 +223,7 @@ fun ProfileScreen(
             ProfileMenuItem(
                 icon = Icons.Default.History,
                 title = stringResource(id = R.string.recently_played),
-                onClick = { Toast.makeText(context, context.getString(R.string.coming_soon), Toast.LENGTH_SHORT).show() }
+                onClick = onRecentlyPlayedClick
             )
         }
 
@@ -212,7 +231,7 @@ fun ProfileScreen(
             ProfileMenuItem(
                 icon = Icons.Default.QueueMusic,
                 title = stringResource(id = R.string.my_playlists),
-                onClick = { Toast.makeText(context, context.getString(R.string.coming_soon), Toast.LENGTH_SHORT).show() }
+                onClick = onMyPlaylistsClick
             )
         }
     }

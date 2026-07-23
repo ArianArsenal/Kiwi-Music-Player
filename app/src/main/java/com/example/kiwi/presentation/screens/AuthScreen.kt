@@ -42,12 +42,20 @@ fun AuthScreen(
     }
 
     var isLoginMode by remember { mutableStateOf(true) }
-    var email by remember { mutableStateOf("") }
+
+    // Unified variable for the first input field
+    var emailOrUsername by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    val isEmailValid = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    // Dynamic validation: Login needs any valid length, Signup requires strict email pattern
+    val isIdentifierValid = if (isLoginMode) {
+        emailOrUsername.length >= 3
+    } else {
+        emailOrUsername.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(emailOrUsername).matches()
+    }
+
     val isPasswordValid = password.length >= 6
     val isUsernameValid = username.length >= 3
 
@@ -67,7 +75,6 @@ fun AuthScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Replaced the generic icon with the custom Kiwi Logo
             Image(
                 painter = painterResource(id = R.drawable.kiwi_logo_transparent),
                 contentDescription = stringResource(id = R.string.content_desc_app_logo),
@@ -126,23 +133,32 @@ fun AuthScreen(
                 }
             }
 
+            // Unified Input Field for Email (Signup) or Email/Username (Login)
             OutlinedTextField(
-                value = email,
+                value = emailOrUsername,
                 onValueChange = {
-                    email = it
+                    emailOrUsername = it
                     viewModel.clearError()
                 },
-                label = { Text(stringResource(id = R.string.email)) },
-                isError = email.isNotBlank() && !isEmailValid,
+                label = {
+                    Text(
+                        if (isLoginMode) stringResource(id = R.string.email_or_username)
+                        else stringResource(id = R.string.email)
+                    )
+                },
+                isError = emailOrUsername.isNotBlank() && !isIdentifierValid,
                 supportingText = {
-                    if (email.isNotBlank() && !isEmailValid) {
-                        Text(stringResource(id = R.string.error_invalid_email), color = MaterialTheme.colorScheme.error)
+                    if (emailOrUsername.isNotBlank() && !isIdentifierValid) {
+                        val errorMsg = if (isLoginMode) stringResource(id = R.string.error_invalid_username) else stringResource(id = R.string.error_invalid_email)
+                        Text(errorMsg, color = MaterialTheme.colorScheme.error)
                     }
                 },
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (isLoginMode) KeyboardType.Text else KeyboardType.Email
+                ),
                 singleLine = true
             )
 
@@ -183,10 +199,11 @@ fun AuthScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { viewModel.loginOrSignUp(email, password, username, isLoginMode) },
+                // Passing the unified field to the ViewModel
+                onClick = { viewModel.loginOrSignUp(emailOrUsername, password, username, isLoginMode) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                enabled = isEmailValid && isPasswordValid && (isLoginMode || isUsernameValid)
+                enabled = isIdentifierValid && isPasswordValid && (isLoginMode || isUsernameValid)
             ) {
                 Text(
                     text = if (isLoginMode) stringResource(id = R.string.log_in) else stringResource(id = R.string.sign_up),

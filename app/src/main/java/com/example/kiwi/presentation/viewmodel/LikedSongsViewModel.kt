@@ -18,14 +18,13 @@ import javax.inject.Inject
 @HiltViewModel
 class LikedSongsViewModel @Inject constructor(
     private val likedSongsRepository: LikedSongsRepository,
-    private val userPreferencesRepository: UserPreferencesRepository // INJECTED
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
 
     private val currentUserId: StateFlow<String> = userPreferencesRepository.userSettingsFlow
         .map { it.username ?: "" }
         .stateIn(viewModelScope, SharingStarted.Lazily, "")
 
-    // Automatically observes Room but only fetches for the active user
     @OptIn(ExperimentalCoroutinesApi::class)
     val likedSongs = currentUserId.flatMapLatest { uid ->
         if (uid.isBlank()) {
@@ -44,8 +43,9 @@ class LikedSongsViewModel @Inject constructor(
                     title = "",
                     artistName = "",
                     coverImageUrl = "",
+                    audioUrl = "", // <-- FIXED: Added the required parameter
                     isCurrentlyLiked = true,
-                    accountId = uid // Pass active user
+                    accountId = uid
                 )
             }
         }

@@ -148,4 +148,7 @@
 
     <string name="search_username">Search username...</string>
     <string name="no_users_found">No users found</string>
+    <string name="followers">Followers</string>
+
+    <string name="email_or_username">Email or Username</string>
 </resources>

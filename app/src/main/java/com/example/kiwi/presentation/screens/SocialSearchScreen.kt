@@ -82,7 +82,7 @@ fun SocialSearchScreen(
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     // Navigate to Chat Screen using the username as the ID
-                                    navController.navigate("chat_screen/${user.username}/${user.username}")
+                                    navController.navigate("user_profile/${user.username}")
                                 }
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically

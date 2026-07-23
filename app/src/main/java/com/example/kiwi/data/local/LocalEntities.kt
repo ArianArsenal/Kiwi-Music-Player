@@ -24,7 +24,8 @@ data class LikedSongEntity(
     val artistName: String,
     val coverImageUrl: String,
     val timestamp: Long,
-    val accountId: String
+    val accountId: String,
+    val audioUrl: String
 )
 
 // 3. Downloaded Files Table

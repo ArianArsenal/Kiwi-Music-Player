@@ -12,26 +12,28 @@ import com.example.kiwi.data.paging.SongPagingSource
 import com.example.kiwi.domain.model.Playlist
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.SongRepository
-import com.example.kiwi.domain.repository.UserPreferencesRepository // <-- ADDED
+import com.example.kiwi.domain.repository.UserPreferencesRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.storage.storage // <-- Correct Storage Import
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi // <-- ADDED
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flatMapLatest // <-- ADDED
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf // <-- ADDED
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
 class SongRepositoryImpl @Inject constructor(
     private val supabase: SupabaseClient,
     private val dao: SongDao,
-    private val userPreferencesRepository: UserPreferencesRepository // <-- INJECTED HERE
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : SongRepository {
 
     override fun getFeaturedSongs(): Flow<List<Song>> = flow {
@@ -68,7 +70,6 @@ class SongRepositoryImpl @Inject constructor(
         }
     }
 
-    // UPDATED: Dynamically fetch active user ID and pass to DAO
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getDownloadedSongs(): Flow<List<Song>> {
         return userPreferencesRepository.userSettingsFlow
@@ -86,7 +87,6 @@ class SongRepositoryImpl @Inject constructor(
 
     override suspend fun saveSongLocally(song: Song) {
         withContext(Dispatchers.IO) {
-            // Need the active account ID to save the song entity correctly
             userPreferencesRepository.userSettingsFlow.collect { settings ->
                 val uid = settings.username
                 if (!uid.isNullOrBlank()) {
@@ -136,7 +136,41 @@ class SongRepositoryImpl @Inject constructor(
         }
     }
 
-    // UPDATED: Dynamically fetch active user ID and pass to DAO
+    override suspend fun createPlaylist(name: String, coverBytes: ByteArray?, isPublic: Boolean, userId: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val newId = java.util.UUID.randomUUID().toString()
+
+                var uploadedUrl = "https://picsum.photos/200"
+
+                if (coverBytes != null) {
+                    val path = "$newId.jpg"
+                    val bucket = supabase.storage.from("kiwi_covers")
+
+                    // Upload the bytes (UUID guarantees uniqueness)
+                    bucket.upload(path, coverBytes)
+
+                    // Retrieve the public URL for the database
+                    uploadedUrl = bucket.publicUrl(path)
+                }
+
+                val newPlaylist = Playlist(
+                    id = newId,
+                    name = name,
+                    coverImageUrl = uploadedUrl,
+                    userId = userId,
+                    category = "user",
+                    isPublic = isPublic
+                )
+
+                supabase.from("playlists").insert(newPlaylist)
+
+            } catch (e: Exception) {
+                Log.e("SupabaseError", "Failed to create playlist: ${e.message}", e)
+            }
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getDownloadedSongCount(): Flow<Int> {
         return userPreferencesRepository.userSettingsFlow
@@ -177,7 +211,6 @@ class SongRepositoryImpl @Inject constructor(
             pagingSourceFactory = {
                 SongPagingSource { limit, offset ->
                     if (query.isBlank()) return@SongPagingSource emptyList()
-
                     if (filter == "Playlists") return@SongPagingSource emptyList()
 
                     val response = supabase.postgrest["songs"]
@@ -237,7 +270,25 @@ class SongRepositoryImpl @Inject constructor(
             }
         ).flow
     }
+
+
+    override suspend fun addSongToPlaylist(playlistId: String, songId: String) {
+        withContext(Dispatchers.IO) {
+            try {
+                val dto = PlaylistSongInsertDTO(playlistId = playlistId, songId = songId)
+                supabase.from("playlist_songs").insert(dto)
+            } catch (e: Exception) {
+                Log.e("SupabaseError", "Failed to add song to playlist: ${e.message}", e)
+            }
+        }
+    }
 }
+
+@Serializable
+private data class PlaylistSongInsertDTO(
+    @SerialName("playlist_id") val playlistId: String,
+    @SerialName("song_id") val songId: String
+)
 
 @Serializable
 data class PlaylistSongWrapper(

@@ -49,6 +49,8 @@ dependencies {
     implementation("androidx.paging:paging-runtime:3.2.1")
     implementation("androidx.paging:paging-compose:3.2.1")
 
+    implementation("io.github.jan-tennert.supabase:storage-kt:2.5.0")
+
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

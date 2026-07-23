@@ -23,13 +23,15 @@ class AuthViewModel @Inject constructor(
     private val _authError = MutableStateFlow<String?>(null)
     val authError = _authError.asStateFlow()
 
-    fun loginOrSignUp(email: String, pass: String, username: String, isLoginMode: Boolean) {
+    // Note: 'emailOrUsername' is passed from the first text field in the UI.
+    fun loginOrSignUp(emailOrUsername: String, pass: String, username: String, isLoginMode: Boolean) {
         viewModelScope.launch {
             _authError.value = null
 
             if (isLoginMode) {
-                // 1. Fetch user from Room Database
-                val user = userDao.getUserByEmail(email)
+                // 1. Fetch user from Room Database using EITHER email or username
+                val user = userDao.getUserByIdentifier(emailOrUsername)
+
                 if (user != null && user.passwordHash == pass) {
                     userPreferencesRepository.saveAccountCredentials(user.email, user.passwordHash, user.username)
                     userPreferencesRepository.setPremiumStatus(user.isPremium)
@@ -43,11 +45,11 @@ class AuthViewModel @Inject constructor(
                     }
                     userPreferencesRepository.setLoggedInState(true)
                 } else {
-                    _authError.value = "Invalid email or password."
+                    _authError.value = "Invalid email/username or password."
                 }
             } else {
                 // 1. Check if email exists
-                val existingEmail = userDao.getUserByEmail(email)
+                val existingEmail = userDao.getUserByEmail(emailOrUsername)
                 if (existingEmail != null) {
                     _authError.value = "This email is already registered."
                     return@launch
@@ -62,7 +64,7 @@ class AuthViewModel @Inject constructor(
 
                 // 3. Create new user in Room
                 val newUser = UserEntity(
-                    email = email,
+                    email = emailOrUsername,
                     username = username,
                     passwordHash = pass,
                     isPremium = false,
@@ -73,7 +75,7 @@ class AuthViewModel @Inject constructor(
                 userDao.insertUser(newUser)
 
                 // 4. Log them in and reset active session to defaults
-                userPreferencesRepository.saveAccountCredentials(email, pass, username)
+                userPreferencesRepository.saveAccountCredentials(emailOrUsername, pass, username)
                 userPreferencesRepository.setPremiumStatus(false)
                 userPreferencesRepository.toggleDarkMode(true) // Ensure clean slate
                 userPreferencesRepository.setLanguage("en")    // Ensure clean slate

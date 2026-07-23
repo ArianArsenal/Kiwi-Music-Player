@@ -192,7 +192,8 @@ fun SearchScreen(
                                         )
                                     }
                                     Button(
-                                        onClick = { socialViewModel.toggleFollow(user.id) },
+                                        // FIXED: Added user.isFollowing as the second parameter
+                                        onClick = { socialViewModel.toggleFollow(user.id, user.isFollowing) },
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = if (user.isFollowing) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
                                             contentColor = if (user.isFollowing) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary

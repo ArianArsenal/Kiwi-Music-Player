@@ -13,6 +13,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.example.kiwi.domain.model.Song
 import com.example.kiwi.domain.repository.LikedSongsRepository
+import com.example.kiwi.domain.repository.RecentlyPlayedRepository
 import com.example.kiwi.domain.repository.UserPreferencesRepository
 import com.example.kiwi.domain.repository.UserRepository
 import com.example.kiwi.playback.KiwiMediaService
@@ -39,6 +40,7 @@ class PlayerViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val likedSongsRepository: LikedSongsRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val recentlyPlayedRepository: RecentlyPlayedRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayerUiState())
@@ -112,6 +114,14 @@ class PlayerViewModel @Inject constructor(
                 if (originalSong != null) {
                     _uiState.update { it.copy(currentSong = originalSong) }
                     checkIfCurrentSongIsLiked(originalSong.id)
+
+                    // NEW: Save to Recently Played history!
+                    viewModelScope.launch {
+                        val uid = currentUserId.value
+                        if (uid.isNotBlank()) {
+                            recentlyPlayedRepository.addSongToHistory(originalSong, uid)
+                        }
+                    }
                 }
             }
         })
@@ -214,8 +224,9 @@ class PlayerViewModel @Inject constructor(
                             title = currentSong.title,
                             artistName = currentSong.artistName,
                             coverImageUrl = currentSong.coverImageUrl,
+                            audioUrl = currentSong.audioUrl, // <-- FIXED: Added the audio URL here!
                             isCurrentlyLiked = _uiState.value.isCurrentSongLiked,
-                            accountId = uid // Added active user ID
+                            accountId = uid
                         )
                     }
                 }

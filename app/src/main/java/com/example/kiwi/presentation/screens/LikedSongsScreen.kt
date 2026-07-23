@@ -5,9 +5,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed // <-- CHANGED
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,7 +38,7 @@ import com.example.kiwi.presentation.viewmodel.LikedSongsViewModel
 fun LikedSongsScreen(
     viewModel: LikedSongsViewModel = hiltViewModel(),
     onPlayAll: (List<Song>, Int) -> Unit,
-    onBackClick: () -> Unit // Added back click parameter
+    onBackClick: () -> Unit
 ) {
     val likedSongs by viewModel.likedSongs.collectAsState()
 
@@ -54,7 +55,6 @@ fun LikedSongsScreen(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.BottomStart
             ) {
-                // Added Back Button inside the custom header
                 IconButton(
                     onClick = onBackClick,
                     modifier = Modifier
@@ -105,7 +105,7 @@ fun LikedSongsScreen(
                                         title = entity.title,
                                         artistName = entity.artistName,
                                         coverImageUrl = entity.coverImageUrl,
-                                        audioUrl = ""
+                                        audioUrl = entity.audioUrl // <-- FIX: Pass the actual URL instead of ""
                                     )
                                 }.shuffled()
                                 onPlayAll(domainSongs, 0)
@@ -149,10 +149,11 @@ fun LikedSongsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
                 ) {
-                    items(
+                    // FIXED: Replaced items with itemsIndexed to get the clicked index
+                    itemsIndexed(
                         items = likedSongs,
-                        key = { it.songId }
-                    ) { entity ->
+                        key = { _, it -> it.songId }
+                    ) { index, entity ->
                         val dismissState = rememberSwipeToDismissBoxState(
                             confirmValueChange = {
                                 if (it == SwipeToDismissBoxValue.EndToStart) {
@@ -189,6 +190,19 @@ fun LikedSongsScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .background(MaterialTheme.colorScheme.background)
+                                        .clickable {
+                                            // FIXED: Make the row clickable and play the specific song
+                                            val domainSongs = likedSongs.map { s ->
+                                                Song(
+                                                    id = s.songId,
+                                                    title = s.title,
+                                                    artistName = s.artistName,
+                                                    coverImageUrl = s.coverImageUrl,
+                                                    audioUrl = s.audioUrl // <-- FIX: Pass the actual URL instead of ""
+                                                )
+                                            }
+                                            onPlayAll(domainSongs, index)
+                                        }
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {

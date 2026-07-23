@@ -6,8 +6,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -29,23 +32,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.example.kiwi.R
-import com.example.kiwi.domain.model.Song
+import com.example.kiwi.data.local.TopArtist
 import com.example.kiwi.presentation.components.HorizontalSongSlider
 import com.example.kiwi.presentation.components.QuickActionButton
-import com.example.kiwi.presentation.components.ShimmerSongItemRow
+import com.example.kiwi.presentation.components.shimmerEffect
 import com.example.kiwi.presentation.theme.LocalDimens
 import com.example.kiwi.presentation.viewmodel.HomeEffect
-import com.example.kiwi.presentation.viewmodel.HomeIntent
 import com.example.kiwi.presentation.viewmodel.HomeViewModel
 import com.example.kiwi.presentation.viewmodel.PlayerViewModel
 import kotlinx.coroutines.delay
-import androidx.compose.ui.unit.dp
-import com.example.kiwi.presentation.components.shimmerEffect
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -53,18 +54,21 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     playerViewModel: PlayerViewModel,
     onLikedSongsClick: () -> Unit,
-    onPlaylistsClick: () -> Unit
+    onPlaylistsClick: () -> Unit,
+    onRecentlyPlayedClick: () -> Unit,
+    onTopArtistsClick: () -> Unit
 ) {
     val pagedSongs = viewModel.pagedSongs.collectAsLazyPagingItems()
+    val recentlyPlayed by viewModel.recentlyPlayedSongs.collectAsState()
+    val topArtists by viewModel.topArtists.collectAsState()
+
     val dimens = LocalDimens.current
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
-            when (effect) {
-                is HomeEffect.ShowToast -> {
-                    Toast.makeText(context, context.getString(effect.messageResId), Toast.LENGTH_SHORT).show()
-                }
+            if (effect is HomeEffect.ShowToast) {
+                Toast.makeText(context, context.getString(effect.messageResId), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -155,7 +159,7 @@ fun HomeScreen(
                                 QuickActionButton(
                                     icon = Icons.Default.PlayArrow,
                                     label = stringResource(id = R.string.recently_played),
-                                    onClick = { Toast.makeText(context, "Coming Soon!", Toast.LENGTH_SHORT).show() },
+                                    onClick = onRecentlyPlayedClick,
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -172,12 +176,32 @@ fun HomeScreen(
                                 QuickActionButton(
                                     icon = Icons.Default.Star,
                                     label = stringResource(id = R.string.top_artists),
-                                    onClick = { Toast.makeText(context, "Coming Soon!", Toast.LENGTH_SHORT).show() },
+                                    onClick = onTopArtistsClick,
                                     modifier = Modifier.weight(1f)
                                 )
                             }
                         }
                         Spacer(modifier = Modifier.height(dimens.large))
+                    }
+
+                    if (recentlyPlayed.isNotEmpty()) {
+                        item {
+                            HorizontalSongSlider(
+                                title = stringResource(id = R.string.recently_played),
+                                songs = recentlyPlayed,
+                                onSongClick = { song ->
+                                    playerViewModel.playSongList(recentlyPlayed, recentlyPlayed.indexOf(song))
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(dimens.large))
+                        }
+                    }
+
+                    if (topArtists.isNotEmpty()) {
+                        item {
+                            TopArtistsSlider(artists = topArtists)
+                            Spacer(modifier = Modifier.height(dimens.large))
+                        }
                     }
 
                     item {
@@ -211,6 +235,49 @@ fun HomeScreen(
         }
     }
 }
+
+@Composable
+fun TopArtistsSlider(artists: List<TopArtist>) {
+    val dimens = LocalDimens.current
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(id = R.string.top_artists),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = dimens.medium)
+        )
+        Spacer(modifier = Modifier.height(dimens.medium))
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = dimens.medium),
+            horizontalArrangement = Arrangement.spacedBy(dimens.medium)
+        ) {
+            items(artists) { artist ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.width(100.dp)
+                ) {
+                    AsyncImage(
+                        model = artist.coverImageUrl,
+                        contentDescription = artist.artistName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(CircleShape)
+                    )
+                    Spacer(modifier = Modifier.height(dimens.small))
+                    Text(
+                        text = artist.artistName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun HomeSkeleton() {
     val dimens = LocalDimens.current
@@ -221,7 +288,6 @@ fun HomeSkeleton() {
             .padding(horizontal = dimens.medium, vertical = dimens.medium),
         verticalArrangement = Arrangement.spacedBy(dimens.large)
     ) {
-        // 1. Carousel Skeleton
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -230,7 +296,6 @@ fun HomeSkeleton() {
                 .shimmerEffect()
         )
 
-        // 2. Quick Actions Skeleton
         Column(verticalArrangement = Arrangement.spacedBy(dimens.small)) {
             Row(horizontalArrangement = Arrangement.spacedBy(dimens.small)) {
                 Box(modifier = Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(dimens.small)).shimmerEffect())
@@ -242,7 +307,6 @@ fun HomeSkeleton() {
             }
         }
 
-        // 3. Sliders Skeleton (Repeated twice for Popular & Newest)
         repeat(2) {
             Column {
                 Box(
@@ -258,7 +322,7 @@ fun HomeSkeleton() {
                         Column {
                             Box(
                                 modifier = Modifier
-                                    .size(140.dp) // Matches our huge size
+                                    .size(140.dp)
                                     .clip(RoundedCornerShape(dimens.small))
                                     .shimmerEffect()
                             )

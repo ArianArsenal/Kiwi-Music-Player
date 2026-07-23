@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.kiwi.data.local.ChatDao
 import com.example.kiwi.data.local.DownloadedFilesDao
+import com.example.kiwi.data.local.FollowDao
 import com.example.kiwi.data.local.KiwiDatabase
 import com.example.kiwi.data.local.LikedSongsDao
 import com.example.kiwi.data.local.SongDao
@@ -64,5 +65,17 @@ object DatabaseModule {
     @Singleton
     fun provideUserDao(database: KiwiDatabase): UserDao {
         return database.userDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideRecentlyPlayedDao(database: KiwiDatabase): com.example.kiwi.data.local.RecentlyPlayedDao {
+        return database.recentlyPlayedDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFollowDao(database: KiwiDatabase): FollowDao { // <-- FIXED
+        return database.followDao()
     }
 }

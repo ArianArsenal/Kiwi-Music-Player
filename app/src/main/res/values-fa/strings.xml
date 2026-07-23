@@ -149,4 +149,7 @@
 
     <string name="search_username">جستجوی نام کاربری...</string>
     <string name="no_users_found">کاربری یافت نشد</string>
+    <string name="followers">دنبال‌کنندگان</string>
+
+    <string name="email_or_username">ایمیل یا نام کاربری</string>
 </resources>
