@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SmartToy
@@ -44,7 +44,7 @@ fun InboxScreen(
                 title = { Text(stringResource(id = R.string.direct_messages), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back)) // <-- RTL FIX
                     }
                 },
                 actions = {
@@ -68,8 +68,6 @@ fun InboxScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
-                    // Dynamic Profile Icon Rendering
                     if (chat.friendId == "KiwiSupport") {
                         Box(
                             modifier = Modifier
@@ -119,7 +117,6 @@ fun InboxScreen(
                         )
                     }
 
-                    // UNREAD BADGE
                     if (chat.unreadCount > 0) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Badge(

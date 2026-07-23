@@ -98,6 +98,7 @@
     <string name="timer_15m">15m</string>
     <string name="direct_messages">Direct Messages</string>
     <string name="tap_to_view_conversation">Tap to view conversation</string>
+
     <!-- Playlist Details -->
     <string name="content_desc_go_back">Go back</string>
     <string name="title_playlist_tracks">Playlist Tracks</string>
@@ -151,4 +152,21 @@
     <string name="followers">Followers</string>
 
     <string name="email_or_username">Email or Username</string>
+
+    <!-- NEW STRINGS FOR CHAT & PLAYLIST REFACTOR -->
+    <string name="check_out_this_song">Check out this song!</string>
+    <string name="create_playlist">Create Playlist</string>
+    <string name="tap_to_select_cover">Tap to select cover</string>
+    <string name="playlist_name">Playlist Name</string>
+    <string name="public_playlist">Public Playlist</string>
+    <string name="create">Create</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="add_songs_to_playlist">Add Songs to Playlist</string>
+    <string name="search_title_or_artist">Search title or artist</string>
+    <string name="added_song_format">Added %1$s</string>
+    <string name="done">Done</string>
+    <string name="add_songs">Add Songs</string>
+    <string name="add">Add</string>
+
 </resources>

@@ -39,7 +39,8 @@ import com.example.kiwi.presentation.viewmodel.PlaylistsViewModel
 @Composable
 fun PlaylistsScreen(
     viewModel: PlaylistsViewModel = hiltViewModel(),
-    onPlaylistClick: (String) -> Unit
+    onPlaylistClick: (String) -> Unit,
+    onBackClick: (() -> Unit)? = null
 ) {
     val worldMusicPaging = viewModel.worldPlaylists.collectAsLazyPagingItems()
     val localMusicPaging = viewModel.localPlaylists.collectAsLazyPagingItems()
@@ -53,7 +54,6 @@ fun PlaylistsScreen(
         Color(0xFFFFB74D), Color(0xFFBA68C8), Color(0xFF4DB6AC)
     )
 
-    // Dialog State
     var showCreateDialog by remember { mutableStateOf(false) }
     var newPlaylistName by remember { mutableStateOf("") }
     var newPlaylistCoverUri by remember { mutableStateOf<Uri?>(null) }
@@ -75,7 +75,7 @@ fun PlaylistsScreen(
     if (showCreateDialog) {
         AlertDialog(
             onDismissRequest = { if (!isCreating) showCreateDialog = false },
-            title = { Text(text = "Create Playlist", fontWeight = FontWeight.Bold) },
+            title = { Text(text = stringResource(id = R.string.create_playlist), fontWeight = FontWeight.Bold) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Box(
@@ -90,7 +90,7 @@ fun PlaylistsScreen(
                         if (newPlaylistCoverUri != null) {
                             AsyncImage(
                                 model = newPlaylistCoverUri,
-                                contentDescription = "Selected Cover",
+                                contentDescription = stringResource(id = R.string.playlist_cover),
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -98,7 +98,7 @@ fun PlaylistsScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(40.dp))
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("Tap to select cover")
+                                Text(stringResource(id = R.string.tap_to_select_cover))
                             }
                         }
                     }
@@ -108,7 +108,7 @@ fun PlaylistsScreen(
                     OutlinedTextField(
                         value = newPlaylistName,
                         onValueChange = { newPlaylistName = it },
-                        label = { Text("Playlist Name") },
+                        label = { Text(stringResource(id = R.string.playlist_name)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         enabled = !isCreating
@@ -121,7 +121,7 @@ fun PlaylistsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Public Playlist", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(id = R.string.public_playlist), style = MaterialTheme.typography.titleMedium)
                         Switch(
                             checked = isPublic,
                             onCheckedChange = { isPublic = it },
@@ -138,7 +138,6 @@ fun PlaylistsScreen(
                 Button(
                     onClick = {
                         isCreating = true
-
                         val bytes = newPlaylistCoverUri?.let { uri ->
                             try {
                                 context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
@@ -169,13 +168,13 @@ fun PlaylistsScreen(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Create")
+                        Text(stringResource(id = R.string.create))
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCreateDialog = false }, enabled = !isCreating) {
-                    Text("Cancel")
+                    Text(stringResource(id = R.string.cancel))
                 }
             }
         )
@@ -193,7 +192,7 @@ fun PlaylistsScreen(
                 },
                 actions = {
                     IconButton(onClick = { showCreateDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Playlist", tint = Color(0xFF4CAF50)) // Green + button
+                        Icon(Icons.Default.Add, contentDescription = "Add Playlist", tint = Color(0xFF4CAF50))
                     }
                 }
             )
@@ -228,7 +227,6 @@ fun PlaylistsScreen(
                     horizontalArrangement = Arrangement.spacedBy(dimens.medium),
                     verticalArrangement = Arrangement.spacedBy(dimens.medium)
                 ) {
-                    // --- World Music ---
                     item(span = { GridItemSpan(2) }) {
                         CategoryHeader(stringResource(id = R.string.world_music))
                     }
@@ -246,7 +244,6 @@ fun PlaylistsScreen(
                         }
                     }
 
-                    // --- Local Music ---
                     item(span = { GridItemSpan(2) }) {
                         CategoryHeader(stringResource(id = R.string.local_music))
                     }
@@ -264,7 +261,6 @@ fun PlaylistsScreen(
                         }
                     }
 
-                    // --- Your Playlists ---
                     item(span = { GridItemSpan(2) }) {
                         CategoryHeader(stringResource(id = R.string.your_playlists))
                     }

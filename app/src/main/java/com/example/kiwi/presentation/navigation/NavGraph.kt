@@ -108,7 +108,8 @@ fun KiwiNavGraph(
             PlaylistsScreen(
                 onPlaylistClick = { playlistId ->
                     navController.navigate(Screen.PlaylistDetail.createRoute(playlistId))
-                }
+                },
+                onBackClick = { navController.popBackStack() } // <-- ADDED: Navigates back if opened from Home
             )
         }
 
@@ -122,7 +123,7 @@ fun KiwiNavGraph(
                 onRecentlyPlayedClick = { navController.navigate("recently_played") },
                 onTopArtistsClick = { navController.navigate("top_artists") },
                 onUsernameClick = { uid -> navController.navigate("user_profile/$uid") },
-                onMyPlaylistsClick = { navController.navigate(Screen.Playlists.route) } // <-- ADDED
+                onMyPlaylistsClick = { navController.navigate(Screen.Playlists.route) }
             )
         }
 

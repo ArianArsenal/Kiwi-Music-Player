@@ -1,12 +1,12 @@
 package com.example.kiwi.data.local
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
-// NEW: Data class to hold the grouped Inbox data
 data class RecentChat(
     val friendId: String,
     val profilePicUri: String?,
@@ -21,9 +21,9 @@ interface ChatDao {
         SELECT * FROM chat_messages 
         WHERE (senderId = :currentUserId AND receiverId = :friendId) 
            OR (senderId = :friendId AND receiverId = :currentUserId)
-        ORDER BY timestamp ASC
+        ORDER BY timestamp DESC
     """)
-    fun getChatHistoryWithUser(currentUserId: String, friendId: String): Flow<List<ChatMessageEntity>>
+    fun getChatHistoryWithUser(currentUserId: String, friendId: String): PagingSource<Int, ChatMessageEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessage(message: ChatMessageEntity)
@@ -31,7 +31,6 @@ interface ChatDao {
     @Query("UPDATE chat_messages SET status = :newStatus WHERE id = :messageId")
     suspend fun updateMessageStatus(messageId: String, newStatus: String)
 
-    // NEW: Groups messages by friend, gets the latest message, and counts unread
     @Query("""
         SELECT 
             contact_id AS friendId,

@@ -7,8 +7,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,7 +48,6 @@ fun PlaylistDetailScreen(
     val searchResults by viewModel.searchResults.collectAsState(initial = emptyList())
     val currentPlaylist by viewModel.currentPlaylist.collectAsState()
 
-    // NEW: Get the current user ID to verify ownership
     val currentUserId by viewModel.currentUserId.collectAsState()
 
     val dimens = LocalDimens.current
@@ -63,13 +62,13 @@ fun PlaylistDetailScreen(
                 showAddSongDialog = false
                 viewModel.onSearchQueryChange("")
             },
-            title = { Text("Add Songs to Playlist", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(id = R.string.add_songs_to_playlist), fontWeight = FontWeight.Bold) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth().height(350.dp)) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.onSearchQueryChange(it) },
-                        label = { Text("Search title or artist") },
+                        label = { Text(stringResource(id = R.string.search_title_or_artist)) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -78,7 +77,7 @@ fun PlaylistDetailScreen(
 
                     if (searchResults.isEmpty() && searchQuery.isNotBlank()) {
                         Text(
-                            "No songs found",
+                            stringResource(id = R.string.no_results_found),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 16.dp)
                         )
@@ -90,7 +89,7 @@ fun PlaylistDetailScreen(
                                         .fillMaxWidth()
                                         .clickable {
                                             viewModel.addSongToPlaylist(song.id) {
-                                                Toast.makeText(context, "Added ${song.title}", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.added_song_format, song.title), Toast.LENGTH_SHORT).show()
                                                 pagedSongs.refresh()
                                             }
                                         }
@@ -108,7 +107,7 @@ fun PlaylistDetailScreen(
                                         Text(song.title, fontWeight = FontWeight.Bold, maxLines = 1)
                                         Text(song.artistName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
-                                    Icon(Icons.Default.Add, contentDescription = "Add", tint = Color(0xFF4CAF50))
+                                    Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.add), tint = Color(0xFF4CAF50))
                                 }
                             }
                         }
@@ -120,7 +119,7 @@ fun PlaylistDetailScreen(
                     showAddSongDialog = false
                     viewModel.onSearchQueryChange("")
                 }) {
-                    Text("Done")
+                    Text(stringResource(id = R.string.done))
                 }
             }
         )
@@ -141,7 +140,7 @@ fun PlaylistDetailScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBackClick) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(id = R.string.content_desc_go_back),
                         tint = MaterialTheme.colorScheme.onBackground
                     )
@@ -154,14 +153,13 @@ fun PlaylistDetailScreen(
                 )
             }
 
-            // FIXED: Verify both the category AND that the playlist belongs to the current user
             val isMyPlaylist = currentPlaylist?.category?.replace("'", "") == "user" && currentPlaylist?.userId == currentUserId
 
             if (isMyPlaylist) {
                 IconButton(onClick = { showAddSongDialog = true }) {
                     Icon(
                         imageVector = Icons.Default.Add,
-                        contentDescription = "Add Songs",
+                        contentDescription = stringResource(id = R.string.add_songs),
                         tint = Color(0xFF4CAF50),
                         modifier = Modifier.size(28.dp)
                     )

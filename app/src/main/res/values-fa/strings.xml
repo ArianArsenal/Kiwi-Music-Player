@@ -98,6 +98,7 @@
     <string name="timer_15m">۱۵ دقیقه</string>
     <string name="direct_messages">پیام‌های مستقیم</string>
     <string name="tap_to_view_conversation">برای مشاهده گفتگو ضربه بزنید</string>
+
     <!-- Playlist Details -->
     <string name="content_desc_go_back">بازگشت</string>
     <string name="title_playlist_tracks">قطعات لیست‌پخش</string>
@@ -152,4 +153,21 @@
     <string name="followers">دنبال‌کنندگان</string>
 
     <string name="email_or_username">ایمیل یا نام کاربری</string>
+
+    <!-- NEW STRINGS FOR CHAT & PLAYLIST REFACTOR -->
+    <string name="check_out_this_song">این آهنگ رو گوش کن!</string>
+    <string name="create_playlist">ایجاد لیست‌پخش</string>
+    <string name="tap_to_select_cover">برای انتخاب کاور ضربه بزنید</string>
+    <string name="playlist_name">نام لیست‌پخش</string>
+    <string name="public_playlist">لیست‌پخش عمومی</string>
+    <string name="create">ایجاد</string>
+    <string name="cancel">لغو</string>
+
+    <string name="add_songs_to_playlist">افزودن آهنگ به لیست‌پخش</string>
+    <string name="search_title_or_artist">جستجوی عنوان یا هنرمند</string>
+    <string name="added_song_format">%1$s اضافه شد</string>
+    <string name="done">انجام شد</string>
+    <string name="add_songs">افزودن آهنگ‌ها</string>
+    <string name="add">افزودن</string>
+
 </resources>

@@ -4,14 +4,14 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items // <-- THIS IMPORT WAS MISSING
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.example.kiwi.R
 import com.example.kiwi.domain.model.Song
@@ -46,12 +47,11 @@ fun ChatScreen(
         viewModel.setChatPartner(friendId)
     }
 
-    val messages by viewModel.messages.collectAsState()
+    val lazyPagingMessages = viewModel.messages.collectAsLazyPagingItems()
     val inputText by viewModel.inputText.collectAsState()
     val isTyping by viewModel.isFriendTyping.collectAsState()
     val currentUserId by viewModel.currentUserId.collectAsState()
 
-    // Song picker states
     var showSongPicker by remember { mutableStateOf(false) }
     val songSearchQuery by viewModel.songSearchQuery.collectAsState()
     val songSearchResults by viewModel.songSearchResults.collectAsState()
@@ -59,11 +59,7 @@ fun ChatScreen(
     val dimens = LocalDimens.current
     val listState = rememberLazyListState()
 
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
-        }
-    }
+    val shareMessageText = stringResource(id = R.string.check_out_this_song)
 
     Scaffold(
         topBar = {
@@ -71,7 +67,7 @@ fun ChatScreen(
                 title = { Text(friendName) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
                     }
                 }
             )
@@ -88,33 +84,40 @@ fun ChatScreen(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f),
+                reverseLayout = true,
                 contentPadding = PaddingValues(vertical = dimens.medium)
             ) {
-                items(messages) { message ->
-                    val songTitle = message.sharedSongTitle ?: "Unknown Track"
-                    val songArtist = message.sharedSongArtist ?: "Shared Song"
-                    val songCover = message.sharedSongCoverUrl
-                    val songAudioUrl = message.sharedSongAudioUrl
+                items(
+                    count = lazyPagingMessages.itemCount,
+                    key = { index -> lazyPagingMessages[index]?.id ?: index }
+                ) { index ->
+                    val message = lazyPagingMessages[index]
+                    if (message != null) {
+                        val songTitle = message.sharedSongTitle ?: "Unknown Track"
+                        val songArtist = message.sharedSongArtist ?: "Shared Song"
+                        val songCover = message.sharedSongCoverUrl
+                        val songAudioUrl = message.sharedSongAudioUrl
 
-                    MessageBubble(
-                        message = message,
-                        isOwnMessage = message.senderId == currentUserId, // FIX: Efficient direct state usage
-                        sharedSongTitle = if (message.sharedSongId != null) songTitle else null,
-                        sharedSongArtist = songArtist,
-                        sharedSongCoverUrl = songCover,
-                        onSongClick = {
-                            if (songAudioUrl != null) {
-                                val playableSong = Song(
-                                    id = message.sharedSongId ?: java.util.UUID.randomUUID().toString(),
-                                    title = songTitle,
-                                    artistName = songArtist,
-                                    coverImageUrl = songCover ?: "",
-                                    audioUrl = songAudioUrl
-                                )
-                                playerViewModel.processIntent(PlayerIntent.PlaySongList(listOf(playableSong), 0))
+                        MessageBubble(
+                            message = message,
+                            isOwnMessage = message.senderId == currentUserId,
+                            sharedSongTitle = if (message.sharedSongId != null) songTitle else null,
+                            sharedSongArtist = songArtist,
+                            sharedSongCoverUrl = songCover,
+                            onSongClick = {
+                                if (songAudioUrl != null) {
+                                    val playableSong = Song(
+                                        id = message.sharedSongId ?: java.util.UUID.randomUUID().toString(),
+                                        title = songTitle,
+                                        artistName = songArtist,
+                                        coverImageUrl = songCover ?: "",
+                                        audioUrl = songAudioUrl
+                                    )
+                                    playerViewModel.processIntent(PlayerIntent.PlaySongList(listOf(playableSong), 0))
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
 
@@ -153,13 +156,12 @@ fun ChatScreen(
                     shape = CircleShape,
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(Icons.Default.Send, contentDescription = stringResource(id = R.string.send))
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(id = R.string.send))
                 }
             }
         }
     }
 
-    // NEW: Global Song Picker Bottom Sheet with Search
     if (showSongPicker) {
         ModalBottomSheet(onDismissRequest = { showSongPicker = false }) {
             Column(
@@ -174,12 +176,11 @@ fun ChatScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Global Search Bar
                 OutlinedTextField(
                     value = songSearchQuery,
                     onValueChange = { viewModel.updateSongSearchQuery(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search songs online...") },
+                    placeholder = { Text(stringResource(id = R.string.search_placeholder)) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true
@@ -194,7 +195,7 @@ fun ChatScreen(
                             .height(150.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No songs found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(id = R.string.no_results_found), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     LazyColumn(
@@ -206,7 +207,7 @@ fun ChatScreen(
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
                                     .clickable {
-                                        viewModel.shareSong(song)
+                                        viewModel.shareSong(song, shareMessageText)
                                         showSongPicker = false
                                     }
                                     .padding(8.dp),

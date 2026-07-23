@@ -8,11 +8,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed // <-- CHANGED
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -62,7 +62,7 @@ fun LikedSongsScreen(
                         .padding(top = 16.dp, start = 8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack, // <-- RTL FIX
                         contentDescription = stringResource(id = R.string.back),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -105,7 +105,7 @@ fun LikedSongsScreen(
                                         title = entity.title,
                                         artistName = entity.artistName,
                                         coverImageUrl = entity.coverImageUrl,
-                                        audioUrl = entity.audioUrl // <-- FIX: Pass the actual URL instead of ""
+                                        audioUrl = entity.audioUrl
                                     )
                                 }.shuffled()
                                 onPlayAll(domainSongs, 0)
@@ -149,7 +149,6 @@ fun LikedSongsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
                 ) {
-                    // FIXED: Replaced items with itemsIndexed to get the clicked index
                     itemsIndexed(
                         items = likedSongs,
                         key = { _, it -> it.songId }
@@ -191,14 +190,13 @@ fun LikedSongsScreen(
                                         .fillMaxWidth()
                                         .background(MaterialTheme.colorScheme.background)
                                         .clickable {
-                                            // FIXED: Make the row clickable and play the specific song
                                             val domainSongs = likedSongs.map { s ->
                                                 Song(
                                                     id = s.songId,
                                                     title = s.title,
                                                     artistName = s.artistName,
                                                     coverImageUrl = s.coverImageUrl,
-                                                    audioUrl = s.audioUrl // <-- FIX: Pass the actual URL instead of ""
+                                                    audioUrl = s.audioUrl
                                                 )
                                             }
                                             onPlayAll(domainSongs, index)

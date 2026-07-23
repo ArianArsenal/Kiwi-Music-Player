@@ -2,6 +2,8 @@ package com.example.kiwi.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.example.kiwi.data.remote.ChatWebSocketManager
 import com.example.kiwi.domain.model.ChatMessage
 import com.example.kiwi.domain.model.MessageStatus
@@ -21,7 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
-    private val songRepository: SongRepository, // <-- INJECT SONG REPOSITORY
+    private val songRepository: SongRepository,
     private val webSocketManager: ChatWebSocketManager,
     private val userPreferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
@@ -32,20 +34,19 @@ class ChatViewModel @Inject constructor(
 
     private val currentFriendId = MutableStateFlow("")
 
-    val messages = combine(currentUserId, currentFriendId) { uid, fid ->
+    val messages: Flow<PagingData<ChatMessage>> = combine(currentUserId, currentFriendId) { uid, fid ->
         Pair(uid, fid)
     }.flatMapLatest { (uid, fid) ->
         if (uid.isBlank() || fid.isBlank()) {
-            flowOf(emptyList())
+            flowOf(PagingData.empty())
         } else {
             chatRepository.getMessagesWithUser(currentUserId = uid, friendId = fid)
         }
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    }.cachedIn(viewModelScope)
 
     val inputText = MutableStateFlow("")
     val isFriendTyping = MutableStateFlow(false)
 
-    // NEW: Real-time global song search for the bottom sheet
     private val _songSearchQuery = MutableStateFlow("")
     val songSearchQuery = _songSearchQuery.asStateFlow()
 
@@ -53,7 +54,7 @@ class ChatViewModel @Inject constructor(
         .debounce(300L)
         .flatMapLatest { query ->
             if (query.isBlank()) {
-                songRepository.getFeaturedSongs() // Show featured songs by default
+                songRepository.getFeaturedSongs()
             } else {
                 songRepository.searchSongs(query)
             }
@@ -116,13 +117,13 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun shareSong(song: Song) {
+    fun shareSong(song: Song, localizedMessage: String) {
         if (currentFriendId.value.isNotBlank() && currentUserId.value.isNotBlank()) {
             val message = ChatMessage(
                 id = UUID.randomUUID().toString(),
                 senderId = currentUserId.value,
                 receiverId = currentFriendId.value,
-                text = "Check out this song!",
+                text = localizedMessage,
                 timestamp = System.currentTimeMillis(),
                 status = MessageStatus.SENT,
                 sharedSongId = song.id,

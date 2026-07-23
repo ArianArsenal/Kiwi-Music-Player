@@ -1,5 +1,9 @@
 package com.example.kiwi.domain.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import com.example.kiwi.data.local.ChatDao
 import com.example.kiwi.domain.model.ChatMessage
 import com.example.kiwi.domain.model.MessageStatus
@@ -14,10 +18,16 @@ import javax.inject.Singleton
 class ChatRepository @Inject constructor(
     private val chatDao: ChatDao
 ) {
-    // UI observes this Flow. Requires both the active user and the friend.
-    fun getMessagesWithUser(currentUserId: String, friendId: String): Flow<List<ChatMessage>> {
-        return chatDao.getChatHistoryWithUser(currentUserId, friendId).map { entities ->
-            entities.map { it.toDomain() }
+    fun getMessagesWithUser(currentUserId: String, friendId: String): Flow<PagingData<ChatMessage>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = 30,
+                prefetchDistance = 10,
+                enablePlaceholders = false
+            ),
+            pagingSourceFactory = { chatDao.getChatHistoryWithUser(currentUserId, friendId) }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toDomain() }
         }
     }
 

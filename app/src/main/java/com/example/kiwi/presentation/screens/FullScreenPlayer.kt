@@ -26,8 +26,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
@@ -59,11 +61,8 @@ fun FullScreenPlayer(
 
     var showMenu by remember { mutableStateOf(false) }
     val isPremiumUser by viewModel.isPremium.collectAsState()
-
-    // Collect active user ID for user-scoped background downloads
     val currentUserId by viewModel.currentUserId.collectAsState()
 
-    // Dynamic Background Color Animation
     val targetColor = uiState.dominantColor?.let { Color(it) } ?: MaterialTheme.colorScheme.background
     val animatedBackgroundColor by animateColorAsState(
         targetValue = targetColor,
@@ -71,7 +70,6 @@ fun FullScreenPlayer(
         label = "bgColor"
     )
 
-    // CD Rotation Animation
     var currentRotation by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(uiState.isPlaying) {
         if (uiState.isPlaying) {
@@ -106,7 +104,6 @@ fun FullScreenPlayer(
                 .padding(dimens.large),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Bar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -147,17 +144,9 @@ fun FullScreenPlayer(
                                         .setInputData(workData).build()
 
                                     WorkManager.getInstance(context).enqueue(request)
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.downloading_song, song.title),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast.makeText(context, context.getString(R.string.downloading_song, song.title), Toast.LENGTH_SHORT).show()
                                 } else {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.upgrade_premium_download),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast.makeText(context, context.getString(R.string.upgrade_premium_download), Toast.LENGTH_SHORT).show()
                                 }
                             }
                         )
@@ -167,7 +156,6 @@ fun FullScreenPlayer(
 
             Spacer(modifier = Modifier.height(dimens.extraLarge))
 
-            // Animated CD Cover with Optional Shared Element Transition
             val imageModifier = Modifier
                 .size(280.dp)
                 .then(
@@ -184,10 +172,7 @@ fun FullScreenPlayer(
                 .clip(CircleShape)
                 .background(Color.Black)
 
-            Box(
-                modifier = imageModifier,
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = imageModifier, contentAlignment = Alignment.Center) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(song.coverImageUrl)
@@ -195,9 +180,7 @@ fun FullScreenPlayer(
                         .build(),
                     contentDescription = stringResource(id = R.string.cd_cover),
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape),
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
                     onSuccess = { result ->
                         val bitmap: Bitmap = result.result.drawable.toBitmap()
                         Palette.from(bitmap).generate { palette ->
@@ -210,13 +193,9 @@ fun FullScreenPlayer(
             }
 
             Spacer(modifier = Modifier.height(dimens.large))
-
-            // Canvas Audio Visualizer
             AudioVisualizer(isPlaying = uiState.isPlaying)
-
             Spacer(modifier = Modifier.height(dimens.extraLarge))
 
-            // Song Info Row + Like Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -236,9 +215,7 @@ fun FullScreenPlayer(
                     )
                 }
 
-                IconButton(
-                    onClick = { viewModel.processIntent(PlayerIntent.ToggleLikeCurrentSong) }
-                ) {
+                IconButton(onClick = { viewModel.processIntent(PlayerIntent.ToggleLikeCurrentSong) }) {
                     Icon(
                         imageVector = if (uiState.isCurrentSongLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = stringResource(id = R.string.like_song),
@@ -249,7 +226,6 @@ fun FullScreenPlayer(
 
             Spacer(modifier = Modifier.height(dimens.large))
 
-            // Time formatting helper
             fun formatTime(ms: Long): String {
                 val totalSeconds = ms / 1000
                 val minutes = totalSeconds / 60
@@ -257,69 +233,67 @@ fun FullScreenPlayer(
                 return String.format("%02d:%02d", minutes, seconds)
             }
 
-            // Progress Slider and Time Labels
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Slider(
-                    value = uiState.progress,
-                    onValueChange = { newProgress ->
-                        viewModel.processIntent(PlayerIntent.SeekToFraction(newProgress))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = formatTime(uiState.currentPositionMs),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = formatTime(uiState.durationMs),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                    )
-                }
-            }
+            // FIXED: Wrap all core playback controls in LTR composition
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Column {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Slider(
+                            value = uiState.progress,
+                            onValueChange = { newProgress -> viewModel.processIntent(PlayerIntent.SeekToFraction(newProgress)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = formatTime(uiState.currentPositionMs),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = formatTime(uiState.durationMs),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
 
-            // Playback Controls
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { viewModel.processIntent(PlayerIntent.SkipPrevious) }) {
-                    Icon(Icons.Default.SkipPrevious, contentDescription = stringResource(id = R.string.previous), modifier = Modifier.size(48.dp))
-                }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { viewModel.processIntent(PlayerIntent.SkipPrevious) }) {
+                            Icon(Icons.Default.SkipPrevious, contentDescription = stringResource(id = R.string.previous), modifier = Modifier.size(48.dp))
+                        }
 
-                FloatingActionButton(
-                    onClick = { viewModel.processIntent(PlayerIntent.TogglePlayPause) },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    shape = CircleShape,
-                    modifier = Modifier.size(72.dp)
-                ) {
-                    Icon(
-                        imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = stringResource(id = R.string.play_pause),
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
+                        FloatingActionButton(
+                            onClick = { viewModel.processIntent(PlayerIntent.TogglePlayPause) },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            shape = CircleShape,
+                            modifier = Modifier.size(72.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (uiState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = stringResource(id = R.string.play_pause),
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
 
-                IconButton(onClick = { viewModel.processIntent(PlayerIntent.SkipNext) }) {
-                    Icon(Icons.Default.SkipNext, contentDescription = stringResource(id = R.string.next), modifier = Modifier.size(48.dp))
+                        IconButton(onClick = { viewModel.processIntent(PlayerIntent.SkipNext) }) {
+                            Icon(Icons.Default.SkipNext, contentDescription = stringResource(id = R.string.next), modifier = Modifier.size(48.dp))
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(dimens.large))
 
-            // Bottom Tools: Speed & Sleep Timer
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween

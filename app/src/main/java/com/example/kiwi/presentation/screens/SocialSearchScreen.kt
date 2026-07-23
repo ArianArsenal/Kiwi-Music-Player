@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -25,6 +25,7 @@ import coil.compose.AsyncImage
 import com.example.kiwi.R
 import com.example.kiwi.presentation.viewmodel.SocialSearchViewModel
 import androidx.compose.foundation.background
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SocialSearchScreen(
@@ -40,7 +41,7 @@ fun SocialSearchScreen(
                 title = { Text(stringResource(id = R.string.find_friends)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(id = R.string.back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back)) // <-- RTL FIX
                     }
                 }
             )
@@ -52,7 +53,6 @@ fun SocialSearchScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
         ) {
-            // Search Bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.updateSearchQuery(it) },
@@ -65,7 +65,6 @@ fun SocialSearchScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Results List
             if (searchQuery.isNotBlank() && searchResults.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(stringResource(id = R.string.no_users_found), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -81,7 +80,6 @@ fun SocialSearchScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
-                                    // Navigate to Chat Screen using the username as the ID
                                     navController.navigate("user_profile/${user.username}")
                                 }
                                 .padding(12.dp),
@@ -107,9 +105,7 @@ fun SocialSearchScreen(
                                     Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
                                 }
                             }
-
                             Spacer(modifier = Modifier.width(16.dp))
-
                             Column {
                                 Text(
                                     text = user.username,

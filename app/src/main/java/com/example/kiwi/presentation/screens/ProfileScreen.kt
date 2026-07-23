@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,7 +41,7 @@ fun ProfileScreen(
     onRecentlyPlayedClick: () -> Unit,
     onTopArtistsClick: () -> Unit,
     onUsernameClick: (String) -> Unit,
-    onMyPlaylistsClick: () -> Unit, // <-- ADDED
+    onMyPlaylistsClick: () -> Unit,
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     socialViewModel: SocialViewModel = hiltViewModel()
 ) {
@@ -126,7 +127,7 @@ fun ProfileScreen(
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .clickable { onUsernameClick(username) } // <-- FIXED: Now uses onUsernameClick
+                                .clickable { onUsernameClick(username) }
                         )
 
                         if (settings.isPremium) {
@@ -263,7 +264,7 @@ fun ProfileMenuItem(
             modifier = Modifier.weight(1f)
         )
         Icon(
-            imageVector = Icons.Default.ChevronRight,
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, // FIXED
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )

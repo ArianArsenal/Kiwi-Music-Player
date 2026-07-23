@@ -70,6 +70,7 @@ dependencies {
 
     // Compose Navigation
     implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation("androidx.room:room-paging:2.6.1")
 
     implementation("androidx.palette:palette-ktx:1.0.0")
 
